@@ -1,45 +1,33 @@
 const express = require("express");
 const axios = require("axios");
-
-const TENANT_ID = process.env.TENANT_ID;
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-
+const cors = require("cors");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-let cachedToken = null;
-let expiry = null;
+// ✅ Enable CORS for all requests
+app.use(cors());
 
-async function getAccessToken() {
-  if (cachedToken && expiry > Date.now()) {
-    return cachedToken;
-  }
+// Root check
+app.get("/", (req, res) => {
+  res.send("Power BI Token Server is running ✅");
+});
 
-  const resp = await axios.post(
-    `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
-    new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      scope: "https://analysis.windows.net/powerbi/api/.default",
-      grant_type: "client_credentials"
-    })
-  );
-
-  cachedToken = resp.data.access_token;
-  expiry = Date.now() + (resp.data.expires_in - 300) * 1000; // refresh 5 min before expiry
-  return cachedToken;
-}
-
+// Get Embed Token endpoint
 app.get("/get-embed-token", async (req, res) => {
   try {
-    const token = await getAccessToken();
-    res.json({ token });
+    // 👉 यहाँ आप Microsoft API call कर सकते हैं,
+    // फिलहाल demo के लिए dummy token भेज रहे हैं:
+    res.json({ token: "DUMMY-TOKEN" });
+
+    // अगर आपको असली Azure से लेना है तो यहाँ axios.post(...) से कॉल लगेगा
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch token", details: err.message });
+    console.error("Error generating token:", err.message);
+    res.status(500).json({ error: "Failed to fetch token" });
   }
 });
 
-// ✅ Important: Render uses dynamic port
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
