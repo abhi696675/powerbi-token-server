@@ -15,18 +15,18 @@ const reportId = process.env.REPORT_ID;
 app.use(cors());
 
 // =============================
-// 1️⃣ Root Check
+// Root Check
 // =============================
 app.get("/", (req, res) => {
   res.send("Power BI Token Server is running ✅");
 });
 
 // =============================
-// 2️⃣ Generate Embed Token
+// Embed Token Route
 // =============================
 app.get("/get-embed-token", async (req, res) => {
   try {
-    // Azure AD Token
+    // Azure AD token
     const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
     const form = new URLSearchParams();
     form.append("grant_type", "client_credentials");
@@ -37,9 +37,8 @@ app.get("/get-embed-token", async (req, res) => {
     const aadTokenResp = await axios.post(tokenUrl, form);
     const accessToken = aadTokenResp.data.access_token;
 
-    // Embed Token
+    // Embed token
     const embedUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/GenerateToken`;
-
     const embedResp = await axios.post(
       embedUrl,
       { accessLevel: "view" },
@@ -54,7 +53,7 @@ app.get("/get-embed-token", async (req, res) => {
 });
 
 // =============================
-// Helper: Get Access Token (Azure AD)
+// Helper → Azure AD Access Token
 // =============================
 async function getAccessToken() {
   const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
@@ -69,27 +68,27 @@ async function getAccessToken() {
 }
 
 // =============================
-// 3️⃣ Export Report (PDF/PPTX)
+// Export Report (PDF/PPTX)
 // =============================
 app.get("/export-report", async (req, res) => {
   try {
     const token = await getAccessToken();
     const format = req.query.format || "PDF"; // default PDF
 
-    // Step 1: Start Export Job
+    // ✅ Workspace ID + Report ID use karna zaroori hai
     const exportResp = await axios.post(
-      `https://api.powerbi.com/v1.0/myorg/reports/${reportId}/ExportTo`,
+      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
       { format },
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
     const exportId = exportResp.data.id;
 
-    // Step 2: Polling until complete
+    // Poll until export completes
     let fileBuffer;
     while (true) {
       const statusResp = await axios.get(
-        `https://api.powerbi.com/v1.0/myorg/reports/${reportId}/exports/${exportId}`,
+        `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/exports/${exportId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -101,12 +100,12 @@ app.get("/export-report", async (req, res) => {
         fileBuffer = fileResp.data;
         break;
       } else if (statusResp.data.status === "Failed") {
-        throw new Error("Export failed");
+        throw new Error("Export failed ❌");
       }
-      await new Promise(r => setTimeout(r, 3000)); // 3 sec delay
+      await new Promise(r => setTimeout(r, 3000)); // wait 3 sec
     }
 
-    // Step 3: Send File
+    // Send file
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader(
       "Content-Disposition",
@@ -115,13 +114,13 @@ app.get("/export-report", async (req, res) => {
     res.send(fileBuffer);
 
   } catch (err) {
-    console.error("❌ Error exporting report:", err.response?.data || err.message);
+    console.error("❌ Error exporting:", err.response?.data || err.message);
     res.status(500).json({ error: "Failed to export report" });
   }
 });
 
 // =============================
-// 4️⃣ Start Server
+// Start Server
 // =============================
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
