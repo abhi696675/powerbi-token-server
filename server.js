@@ -5,7 +5,7 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Env Vars
+// ✅ Env Vars (Render Environment pe set hone chahiye)
 const tenantId = process.env.TENANT_ID;
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
@@ -26,7 +26,7 @@ app.get("/", (req, res) => {
 // =============================
 app.get("/get-embed-token", async (req, res) => {
   try {
-    // Azure AD token
+    // 1. Azure AD Token
     const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
     const form = new URLSearchParams();
     form.append("grant_type", "client_credentials");
@@ -37,7 +37,7 @@ app.get("/get-embed-token", async (req, res) => {
     const aadTokenResp = await axios.post(tokenUrl, form);
     const accessToken = aadTokenResp.data.access_token;
 
-    // Embed token
+    // 2. Embed Token
     const embedUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/GenerateToken`;
     const embedResp = await axios.post(
       embedUrl,
@@ -48,7 +48,7 @@ app.get("/get-embed-token", async (req, res) => {
     res.json({ token: embedResp.data.token });
   } catch (err) {
     console.error("❌ Error generating token:", err.response?.data || err.message);
-    res.status(500).json({ error: "Failed to fetch token" });
+    res.status(500).json({ error: err.response?.data || "Failed to fetch token" });
   }
 });
 
@@ -75,7 +75,7 @@ app.get("/export-report", async (req, res) => {
     const token = await getAccessToken();
     const format = req.query.format || "PDF"; // default PDF
 
-    // ✅ Workspace ID + Report ID use karna zaroori hai
+    // ✅ Workspace ID + Report ID required
     const exportResp = await axios.post(
       `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
       { format },
@@ -102,10 +102,10 @@ app.get("/export-report", async (req, res) => {
       } else if (statusResp.data.status === "Failed") {
         throw new Error("Export failed ❌");
       }
-      await new Promise(r => setTimeout(r, 3000)); // wait 3 sec
+      await new Promise(r => setTimeout(r, 3000)); // wait 3 sec before retry
     }
 
-    // Send file
+    // Send file to client
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader(
       "Content-Disposition",
@@ -115,7 +115,9 @@ app.get("/export-report", async (req, res) => {
 
   } catch (err) {
     console.error("❌ Error exporting:", err.response?.data || err.message);
-    res.status(500).json({ error: "Failed to export report" });
+    res.status(500).json({
+      error: err.response?.data || err.message || "Failed to export report"
+    });
   }
 });
 
