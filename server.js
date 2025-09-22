@@ -14,10 +14,6 @@ const reportId = process.env.REPORT_ID;
 
 app.use(cors());
 
-// 🔹 Cache storage
-let cachedEmbedToken = null;
-let cachedEmbedExpiry = null;
-
 // =============================
 // Root Check
 // =============================
@@ -26,18 +22,10 @@ app.get("/", (req, res) => {
 });
 
 // =============================
-// Embed Token Route (with cache)
+// Embed Token Route
 // =============================
 app.get("/get-embed-token", async (req, res) => {
   try {
-    const now = Date.now();
-
-    // If cached token is still valid → reuse it
-    if (cachedEmbedToken && cachedEmbedExpiry && now < cachedEmbedExpiry) {
-      console.log("♻️ Returning cached embed token");
-      return res.json({ token: cachedEmbedToken });
-    }
-
     // Azure AD token
     const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
     const form = new URLSearchParams();
@@ -57,17 +45,83 @@ app.get("/get-embed-token", async (req, res) => {
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
-    // Store in cache
-    cachedEmbedToken = embedResp.data.token;
-    cachedEmbedExpiry = now + (embedResp.data.expiration
-      ? (new Date(embedResp.data.expiration).getTime() - 60000) // if API gives expiry, use it
-      : 55 * 60 * 1000); // otherwise assume 55 mins safe window
-
-    console.log("✅ New embed token generated");
-    res.json({ token: cachedEmbedToken });
-
+    res.json({ token: embedResp.data.token });
   } catch (err) {
     console.error("❌ Error generating token:", err.response?.data || err.message);
     res.status(500).json({ error: "Failed to fetch token" });
   }
+});
+
+// =============================
+// Helper → Azure AD Access Token
+// =============================
+async function getAccessToken() {
+  const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+  const form = new URLSearchParams();
+  form.append("grant_type", "client_credentials");
+  form.append("client_id", clientId);
+  form.append("client_secret", clientSecret);
+  form.append("scope", "https://analysis.windows.net/powerbi/api/.default");
+
+  const resp = await axios.post(tokenUrl, form);
+  return resp.data.access_token;
+}
+
+// =============================
+// Export Report (PDF/PPTX)
+// =============================
+app.get("/export-report", async (req, res) => {
+  try {
+    const token = await getAccessToken();
+    const format = req.query.format || "PDF"; // default PDF
+
+    // ✅ Workspace ID + Report ID use karna zaroori hai
+    const exportResp = await axios.post(
+      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
+      { format },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const exportId = exportResp.data.id;
+
+    // Poll until export completes
+    let fileBuffer;
+    while (true) {
+      const statusResp = await axios.get(
+        `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/exports/${exportId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (statusResp.data.status === "Succeeded") {
+        const fileResp = await axios.get(statusResp.data.resourceLocation, {
+          responseType: "arraybuffer",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fileBuffer = fileResp.data;
+        break;
+      } else if (statusResp.data.status === "Failed") {
+        throw new Error("Export failed ❌");
+      }
+      await new Promise(r => setTimeout(r, 3000)); // wait 3 sec
+    }
+
+    // Send file
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Report.${format.toLowerCase()}`
+    );
+    res.send(fileBuffer);
+
+  } catch (err) {
+    console.error("❌ Error exporting:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to export report" });
+  }
+});
+
+// =============================
+// Start Server
+// =============================
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
