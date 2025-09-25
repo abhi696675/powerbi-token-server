@@ -11,6 +11,7 @@ const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const workspaceId = process.env.WORKSPACE_ID;
 const reportId = process.env.REPORT_ID;
+const DatasetId = process.env.DATASET_ID;
 
 app.use(cors());
 
@@ -66,7 +67,25 @@ async function getAccessToken() {
   const resp = await axios.post(tokenUrl, form);
   return resp.data.access_token;
 }
+// =============================
+// Refresh Dataset Route  ✅ (insert here)
+// =============================
+app.post("/refresh-dataset", async (req, res) => {
+  try {
+    const token = await getAccessToken();
 
+    await axios.post(
+      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${process.env.DATASET_ID}/refreshes`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    res.json({ message: "🔄 Dataset refresh triggered successfully!" });
+  } catch (err) {
+    console.error("❌ Error refreshing dataset:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to refresh dataset" });
+  }
+});
 // =============================
 // Export Report (PDF/PPTX)
 // =============================
