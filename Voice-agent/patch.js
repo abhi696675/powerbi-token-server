@@ -3,7 +3,15 @@ const path = require("path");
 
 // Path to your PBIP report JSON (adjust if needed)
 const reportPath = path.join(__dirname, "../Coffee.Report/Report.json");
-let report = JSON.parse(fs.readFileSync(reportPath, "utf-8"));
+
+// Load report safely
+let report;
+try {
+  report = JSON.parse(fs.readFileSync(reportPath, "utf-8"));
+} catch (err) {
+  console.error("❌ Failed to load report file:", err.message);
+  process.exit(1);
+}
 
 // ---------------- FUNCTIONS ----------------
 
@@ -24,6 +32,8 @@ function addCard(pageName, title, measureRef) {
   const page = report.sections.find(s => s.displayName === pageName);
   if (!page) return console.error("❌ Page not found: " + pageName);
 
+  if (!page.visualContainers) page.visualContainers = [];
+
   const card = {
     config: {
       name: `${title.replace(/\s+/g, '')}Card`,
@@ -41,7 +51,10 @@ function addCard(pageName, title, measureRef) {
         }
       }
     },
-    x: 100, y: 200, width: 200, height: 100
+    x: 100,
+    y: 200,
+    width: 200,
+    height: 100
   };
 
   page.visualContainers.push(card);
@@ -65,10 +78,15 @@ function createComparisonPage(vendor1, vendor2, metricRef) {
             }
           }
         },
-        x: 50, y: 50, width: 600, height: 400
+        x: 50,
+        y: 50,
+        width: 600,
+        height: 400
       }
     ]
   };
+
+  if (!report.sections) report.sections = [];
   report.sections.push(newPage);
   console.log(`✅ New comparison page created: ${vendor1} vs ${vendor2}`);
 }
@@ -93,12 +111,17 @@ if (command.includes("theme")) {
   if (vendors && vendors.length >= 2) {
     createComparisonPage(vendors[0], vendors[1], "Caffeine (mg)");
   } else {
-    console.error("❌ Please specify two vendors");
+    console.error("❌ Please specify two vendors (e.g. Costa vs Starbucks)");
   }
 
 } else {
-  console.error("❌ Command not recognized.");
+  console.error("❌ Command not recognized:", command);
 }
 
 // ---------------- SAVE BACK ----------------
-fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+try {
+  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+  console.log("💾 Report saved successfully!");
+} catch (err) {
+  console.error("❌ Failed to save report:", err.message);
+}
