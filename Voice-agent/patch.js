@@ -91,37 +91,53 @@ function createComparisonPage(vendor1, vendor2, metricRef) {
   console.log(`✅ New comparison page created: ${vendor1} vs ${vendor2}`);
 }
 
-// ---------------- COMMAND PARSER ----------------
+// ---------------- COMMAND HANDLER ----------------
+function handleCommand(command) {
+  const cmd = command.toLowerCase();
 
-const command = process.argv.slice(2).join(" ").toLowerCase();
+  if (cmd.includes("theme")) {
+    const color = cmd.match(/#([0-9A-Fa-f]{6})/);
+    if (color) applyTheme(color[0]);
+    else console.error("❌ Please provide a hex color e.g. #8B1E2C");
 
-if (command.includes("theme")) {
-  const color = command.match(/#([0-9A-Fa-f]{6})/);
-  if (color) applyTheme(color[0]);
-  else console.error("❌ Please provide a hex color e.g. #8B1E2C");
+  } else if (cmd.includes("caffeine safe limit")) {
+    addCard("Overview", "Caffeine Safe Limit", "Measures.[Safe Caffeine Limit (mg/day)]");
 
-} else if (command.includes("caffeine safe limit")) {
-  addCard("Overview", "Caffeine Safe Limit", "Measures.[Safe Caffeine Limit (mg/day)]");
+  } else if (cmd.includes("sugar safe limit")) {
+    addCard("Overview", "Sugar Safe Limit", "Measures.[Safe Sugar Limit (g/day)]");
 
-} else if (command.includes("sugar safe limit")) {
-  addCard("Overview", "Sugar Safe Limit", "Measures.[Safe Sugar Limit (g/day)]");
+  } else if (cmd.includes("comparison")) {
+    const vendors = cmd.match(/costa|starbucks|pret|greggs|nero/gi);
+    if (vendors && vendors.length >= 2) {
+      createComparisonPage(vendors[0], vendors[1], "Caffeine (mg)");
+    } else {
+      console.error("❌ Please specify two vendors (e.g. Costa vs Starbucks)");
+    }
 
-} else if (command.includes("comparison")) {
-  const vendors = command.match(/costa|starbucks|pret|greggs|nero/gi);
-  if (vendors && vendors.length >= 2) {
-    createComparisonPage(vendors[0], vendors[1], "Caffeine (mg)");
   } else {
-    console.error("❌ Please specify two vendors (e.g. Costa vs Starbucks)");
+    console.error("❌ Command not recognized:", command);
   }
 
-} else {
-  console.error("❌ Command not recognized:", command);
+  try {
+    fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+    console.log("💾 Report saved successfully!");
+  } catch (err) {
+    console.error("❌ Failed to save report:", err.message);
+  }
 }
 
-// ---------------- SAVE BACK ----------------
-try {
-  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-  console.log("💾 Report saved successfully!");
-} catch (err) {
-  console.error("❌ Failed to save report:", err.message);
+// ---------------- CLI MODE ----------------
+if (require.main === module) {
+  const command = process.argv.slice(2).join(" ");
+  if (!command) {
+    console.error("⚠️ No command provided");
+    process.exit(1);
+  }
+  handleCommand(command);
 }
+
+// ---------------- EXPORT FOR SERVER ----------------
+function runCommand(command) {
+  handleCommand(command);
+}
+module.exports = { runCommand };
