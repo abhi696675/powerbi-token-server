@@ -1,8 +1,8 @@
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
-const { execSync } = require("child_process");
 const { commitAndPush } = require("./Voice-agent/git-helper");
+const { runCommand } = require("./Voice-agent/patch");  // 👈 Direct import
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -139,25 +139,13 @@ app.post("/voice-command", (req, res) => {
   console.log("🎙️ Voice command:", cmd);
 
   try {
-    // 🔹 Example direct handling
-    if (cmd.includes("add card") && cmd.includes("caffeine safe limit")) {
-      return res.json({ status: "ok", message: "✅ Card 'Caffeine Safe Limit' added" });
-    }
+    // 🔹 Direct runCommand (no execSync)
+    runCommand(cmd);
 
-    if (cmd.includes("add card") && cmd.includes("vendor vs caffeine")) {
-      return res.json({ status: "ok", message: "✅ Card 'Vendor vs Caffeine' added" });
-    }
-
-    if (cmd.includes("refresh")) {
-      return res.json({ status: "ok", message: "🔄 Refresh triggered (use /refresh-dataset)" });
-    }
-
-    // 🔹 Fallback → call patch.js
-    execSync(`node patch.js "${cmd}"`, { cwd: "./Voice-agent", stdio: "inherit" });
+    // 🔹 Commit changes to GitHub
     commitAndPush(`Voice command: ${cmd}`);
 
-    return res.json({ status: "ok", message: `⚡ Executed via patch.js: ${cmd}` });
-
+    return res.json({ status: "ok", message: `⚡ Executed runCommand: ${cmd}` });
   } catch (err) {
     console.error("❌ Error executing voice-command:", err);
     res.status(500).json({ status: "error", message: err.message });
