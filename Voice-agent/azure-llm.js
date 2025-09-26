@@ -13,11 +13,20 @@ async function callAzureOpenAI(prompt) {
       url,
       {
         messages: [
-          { role: "system", content: "You are a JSON command generator for a Power BI report editor." },
+          {
+            role: "system",
+            content: `
+              You are a JSON command generator for a Power BI report editor.
+              Always respond ONLY with a valid JSON object.
+              Supported actions:
+              1. { "action": "applyTheme", "colorHex": "#RRGGBB" }
+              2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
+              3. { "action": "createComparison", "vendor1": "Costa", "vendor2": "Starbucks", "metric": "Caffeine (mg)" }
+            `
+          },
           { role: "user", content: prompt }
         ],
         max_completion_tokens: 300 // ✅ Correct param
-        // ❌ Removed response_format (not supported in Azure Chat API)
       },
       {
         headers: {
@@ -28,8 +37,14 @@ async function callAzureOpenAI(prompt) {
     );
 
     // ✅ Extract AI result safely
-    const aiMessage = response.data.choices?.[0]?.message?.content || "{}";
-    return JSON.parse(aiMessage);
+    let aiMessage = response.data.choices?.[0]?.message?.content || "{}";
+
+    try {
+      return JSON.parse(aiMessage);
+    } catch (jsonErr) {
+      console.error("⚠️ Failed to parse AI JSON:", aiMessage);
+      return { error: "Invalid JSON from AI", raw: aiMessage };
+    }
 
   } catch (err) {
     console.error("❌ Azure OpenAI API error:", err.response?.data || err.message);
