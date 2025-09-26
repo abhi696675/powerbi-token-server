@@ -1,6 +1,8 @@
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const { execSync } = require("child_process");
+const { commitAndPush } = require("./Voice-agent/git-helper");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,46 +13,16 @@ const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const workspaceId = process.env.WORKSPACE_ID;
 const reportId = process.env.REPORT_ID;
-const DatasetId = process.env.DATASET_ID;
+const datasetId = process.env.DATASET_ID;
 
 app.use(cors());
+app.use(express.json());
 
 // =============================
 // Root Check
 // =============================
 app.get("/", (req, res) => {
-  res.send("Power BI Token Server is running ✅");
-});
-
-// =============================
-// Embed Token Route
-// =============================
-app.get("/get-embed-token", async (req, res) => {
-  try {
-    // Azure AD token
-    const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
-    const form = new URLSearchParams();
-    form.append("grant_type", "client_credentials");
-    form.append("client_id", clientId);
-    form.append("client_secret", clientSecret);
-    form.append("scope", "https://analysis.windows.net/powerbi/api/.default");
-
-    const aadTokenResp = await axios.post(tokenUrl, form);
-    const accessToken = aadTokenResp.data.access_token;
-
-    // Embed token
-    const embedUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/GenerateToken`;
-    const embedResp = await axios.post(
-      embedUrl,
-      { accessLevel: "view" },
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-
-    res.json({ token: embedResp.data.token });
-  } catch (err) {
-    console.error("❌ Error generating token:", err.response?.data || err.message);
-    res.status(500).json({ error: "Failed to fetch token" });
-  }
+  res.send("✅ Power BI Token + Voice Agent Server is running");
 });
 
 // =============================
@@ -67,15 +39,37 @@ async function getAccessToken() {
   const resp = await axios.post(tokenUrl, form);
   return resp.data.access_token;
 }
+
 // =============================
-// Refresh Dataset Route  ✅ (insert here)
+// Embed Token Route
+// =============================
+app.get("/get-embed-token", async (req, res) => {
+  try {
+    const token = await getAccessToken();
+    const embedUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/GenerateToken`;
+
+    const embedResp = await axios.post(
+      embedUrl,
+      { accessLevel: "view" },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    res.json({ token: embedResp.data.token });
+  } catch (err) {
+    console.error("❌ Error generating token:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to fetch token" });
+  }
+});
+
+// =============================
+// Refresh Dataset Route
 // =============================
 app.post("/refresh-dataset", async (req, res) => {
   try {
     const token = await getAccessToken();
 
     await axios.post(
-      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${process.env.DATASET_ID}/refreshes`,
+      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/refreshes`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -86,6 +80,7 @@ app.post("/refresh-dataset", async (req, res) => {
     res.status(500).json({ error: "Failed to refresh dataset" });
   }
 });
+
 // =============================
 // Export Report (PDF/PPTX)
 // =============================
@@ -94,7 +89,6 @@ app.get("/export-report", async (req, res) => {
     const token = await getAccessToken();
     const format = req.query.format || "PDF"; // default PDF
 
-    // ✅ Workspace ID + Report ID use karna zaroori hai
     const exportResp = await axios.post(
       `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
       { format },
@@ -124,7 +118,6 @@ app.get("/export-report", async (req, res) => {
       await new Promise(r => setTimeout(r, 3000)); // wait 3 sec
     }
 
-    // Send file
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader(
       "Content-Disposition",
@@ -139,8 +132,41 @@ app.get("/export-report", async (req, res) => {
 });
 
 // =============================
+// Voice Command Route
+// =============================
+app.post("/voice-command", (req, res) => {
+  const cmd = (req.body.command || "").toLowerCase();
+  console.log("🎙️ Voice command:", cmd);
+
+  try {
+    // 🔹 Example direct handling
+    if (cmd.includes("add card") && cmd.includes("caffeine safe limit")) {
+      return res.json({ status: "ok", message: "✅ Card 'Caffeine Safe Limit' added" });
+    }
+
+    if (cmd.includes("add card") && cmd.includes("vendor vs caffeine")) {
+      return res.json({ status: "ok", message: "✅ Card 'Vendor vs Caffeine' added" });
+    }
+
+    if (cmd.includes("refresh")) {
+      return res.json({ status: "ok", message: "🔄 Refresh triggered (use /refresh-dataset)" });
+    }
+
+    // 🔹 Fallback → call patch.js
+    execSync(`node patch.js "${cmd}"`, { cwd: "./Voice-agent", stdio: "inherit" });
+    commitAndPush(`Voice command: ${cmd}`);
+
+    return res.json({ status: "ok", message: `⚡ Executed via patch.js: ${cmd}` });
+
+  } catch (err) {
+    console.error("❌ Error executing voice-command:", err);
+    res.status(500).json({ status: "error", message: err.message });
+  }
+});
+
+// =============================
 // Start Server
 // =============================
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
