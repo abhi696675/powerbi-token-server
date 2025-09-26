@@ -3,7 +3,7 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const { commitAndPush } = require("./Voice-agent/git-helper");
-const { runCommand } = require("./Voice-agent/patch");
+const { runCommand, handleAICommand } = require("./Voice-agent/patch"); // 👈 Added handleAICommand
 const { callAzureOpenAI } = require("./Voice-agent/azure-llm");
 
 const app = express();
@@ -150,8 +150,14 @@ app.post("/voice-command", async (req, res) => {
       return res.status(500).json({ status: "error", message: aiResult.error });
     }
 
-    // Step 2: Run command locally (patch.js)
-    runCommand(cmd);
+    // Step 2: Run AI structured command
+    if (aiResult.action) {
+      console.log("🤖 AI Parsed Command:", aiResult);
+      handleAICommand(aiResult); // 👈 structured handler
+    } else {
+      console.log("⚠️ No AI action found, fallback to keyword");
+      runCommand(cmd);
+    }
 
     // Step 3: Commit to GitHub
     commitAndPush(`Voice command executed: ${cmd}`);

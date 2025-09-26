@@ -95,8 +95,73 @@ function createComparisonPage(vendor1, vendor2, metricRef) {
   console.log(`✅ New comparison page created: ${vendor1} vs ${vendor2}`);
 }
 
+// 4. Show Top Drinks
+function showTopDrinks(metricRef, count = 10) {
+  const newPage = {
+    displayName: `Top ${count} ${metricRef} Drinks`,
+    name: `Top${count}${metricRef.replace(/\s/g, '')}`,
+    visualContainers: [
+      {
+        config: {
+          singleVisual: {
+            visualType: "barChart",
+            projections: {
+              Category: [{ queryRef: "CoffeeDetail[Product]" }],
+              Y: [{ queryRef: `CoffeeDetail[${metricRef}]` }]
+            }
+          }
+        },
+        x: 50,
+        y: 50,
+        width: 600,
+        height: 400
+      }
+    ]
+  };
+
+  if (!report.sections) report.sections = [];
+  report.sections.push(newPage);
+  console.log(`✅ New page created: Top ${count} ${metricRef} Drinks`);
+}
+
 // ---------------- COMMAND HANDLER ----------------
-function handleCommand(command) {
+function handleAICommand(ai) {
+  try {
+    switch (ai.action) {
+      case "change_theme":
+        applyTheme(ai.color || "#8B1E2C"); // default Costa red
+        break;
+
+      case "compare_vendors":
+        if (ai.vendor1 && ai.vendor2) {
+          createComparisonPage(ai.vendor1, ai.vendor2, ai.metric || "Caffeine (mg)");
+        } else {
+          console.error("❌ Missing vendors in AI command");
+        }
+        break;
+
+      case "show_top":
+        showTopDrinks(ai.metric || "Caffeine (mg)", ai.count || 10);
+        break;
+
+      case "add_card":
+        addCard(ai.page || "Overview", ai.title || "New Card", ai.measure || "Measures.[Safe Caffeine Limit (mg/day)]");
+        break;
+
+      default:
+        console.warn("⚠️ Unknown AI action:", ai);
+    }
+
+    // Save report
+    fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+    console.log("💾 Report saved successfully!");
+  } catch (err) {
+    console.error("❌ Error in handleAICommand:", err.message);
+  }
+}
+
+// ---------------- Legacy Keyword Command ----------------
+function runCommand(command) {
   const cmd = command.toLowerCase().trim();
 
   try {
@@ -131,14 +196,9 @@ function handleCommand(command) {
     console.log("💾 Report saved successfully!");
 
   } catch (err) {
-    console.error("❌ Error in handleCommand:", err.message);
+    console.error("❌ Error in runCommand:", err.message);
   }
 }
 
-// ---------------- EXPORT FOR SERVER ----------------
-function runCommand(command) {
-  console.log("🎯 Running command:", command);
-  handleCommand(command);
-}
-
-module.exports = { runCommand };
+// ---------------- EXPORT ----------------
+module.exports = { runCommand, handleAICommand };
