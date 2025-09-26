@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-// ✅ Fixed path (one level up from Voice-agent)
-const reportPath = path.join(__dirname, "..", "Coffee.Report", "report.json");
+// ✅ Always point to project root (GitHub repo clone root)
+const reportPath = path.resolve(process.cwd(), "Coffee.Report", "report.json");
 
 // Load report safely
 let report;
