@@ -148,5 +148,16 @@
     "allowChangeFilterTypes": true,
     "useEnhancedTooltips": true,
     "useDefaultAggregateDisplayName": true
+  },
+  "theme": {
+    "name": "Custom Theme #FFFFFF",
+    "dataColors": [
+      "#FFFFFF",
+      "#A0522D",
+      "#CD853F"
+    ],
+    "background": "#FFF8F0",
+    "foreground": "#2E2E2E",
+    "tableAccent": "#FFFFFF"
   }
 }
