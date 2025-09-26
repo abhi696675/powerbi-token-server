@@ -1,0 +1,152 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/3.0.0/schema.json",
+  "themeCollection": {
+    "baseTheme": {
+      "name": "CY24SU10",
+      "reportVersionAtImport": {
+        "visual": "1.8.95",
+        "report": "2.0.95",
+        "page": "1.3.95"
+      },
+      "type": "SharedResources"
+    }
+  },
+  "objects": {
+    "section": [
+      {
+        "properties": {
+          "verticalAlignment": {
+            "expr": {
+              "Literal": {
+                "Value": "'Middle'"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "outspacePane": [
+      {
+        "properties": {
+          "expanded": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "publicCustomVisuals": [
+    "textFilter25A4896A83E0487089E2B90C9AE57C8A"
+  ],
+  "resourcePackages": [
+    {
+      "name": "SharedResources",
+      "type": "SharedResources",
+      "items": [
+        {
+          "name": "CY24SU10",
+          "path": "BaseThemes/CY24SU10.json",
+          "type": "BaseTheme"
+        }
+      ]
+    },
+    {
+      "name": "RegisteredResources",
+      "type": "RegisteredResources",
+      "items": [
+        {
+          "name": "Greggs_22667523834852048.png",
+          "path": "Greggs_22667523834852048.png",
+          "type": "Image"
+        },
+        {
+          "name": "Cafe_nero329516733632256.jpg",
+          "path": "Cafe_nero329516733632256.jpg",
+          "type": "Image"
+        },
+        {
+          "name": "pret_logo_transparent10717489661149915.png",
+          "path": "pret_logo_transparent10717489661149915.png",
+          "type": "Image"
+        },
+        {
+          "name": "starbucks_logo_circle_kept28066074542771724.png",
+          "path": "starbucks_logo_circle_kept28066074542771724.png",
+          "type": "Image"
+        },
+        {
+          "name": "costa_logo_no_bg01112334125402592.png",
+          "path": "costa_logo_no_bg01112334125402592.png",
+          "type": "Image"
+        },
+        {
+          "name": "ChatGPT_Image_Sep_18,_2025,_02566643394287594.png",
+          "path": "ChatGPT_Image_Sep_18,_2025,_02566643394287594.png",
+          "type": "Image"
+        },
+        {
+          "name": "Sugar7521319973862098.png",
+          "path": "Sugar7521319973862098.png",
+          "type": "Image"
+        },
+        {
+          "name": "Coffee5990581304077179.png",
+          "path": "Coffee5990581304077179.png",
+          "type": "Image"
+        },
+        {
+          "name": "Setting3749893104954408.png",
+          "path": "Setting3749893104954408.png",
+          "type": "Image"
+        },
+        {
+          "name": "leaf8812543986897354.png",
+          "path": "leaf8812543986897354.png",
+          "type": "Image"
+        },
+        {
+          "name": "Hot_Coffee35058143490370897.png",
+          "path": "Hot_Coffee35058143490370897.png",
+          "type": "Image"
+        },
+        {
+          "name": "Cold_Coffee6460113748730665.png",
+          "path": "Cold_Coffee6460113748730665.png",
+          "type": "Image"
+        },
+        {
+          "name": "Frappe1820346529191158.png",
+          "path": "Frappe1820346529191158.png",
+          "type": "Image"
+        },
+        {
+          "name": "Espresso02433202194465567.png",
+          "path": "Espresso02433202194465567.png",
+          "type": "Image"
+        },
+        {
+          "name": "Latte0699396266449589.png",
+          "path": "Latte0699396266449589.png",
+          "type": "Image"
+        },
+        {
+          "name": "Cappucino8914429219156093.png",
+          "path": "Cappucino8914429219156093.png",
+          "type": "Image"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "useStylableVisualContainerHeader": true,
+    "exportDataMode": "AllowSummarized",
+    "defaultDrillFilterOtherVisuals": true,
+    "allowChangeFilterTypes": true,
+    "useEnhancedTooltips": true,
+    "useDefaultAggregateDisplayName": true
+  }
+}
