@@ -3,7 +3,7 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const { commitAndPush } = require("./Voice-agent/git-helper");
-const { runCommand, handleAICommand } = require("./Voice-agent/patch"); // 👈 Added handleAICommand
+const { runCommand, handleAICommand } = require("./Voice-agent/patch");
 const { callAzureOpenAI } = require("./Voice-agent/azure-llm");
 
 const app = express();
@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 });
 
 // =============================
-// Azure AD Access Token (for Power BI)
+// Azure AD Access Token
 // =============================
 async function getAccessToken() {
   const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
@@ -45,7 +45,7 @@ async function getAccessToken() {
 }
 
 // =============================
-// Embed Token Route
+// Embed Token
 // =============================
 app.get("/get-embed-token", async (req, res) => {
   try {
@@ -86,76 +86,55 @@ app.post("/refresh-dataset", async (req, res) => {
 });
 
 // =============================
-// Export Report (PDF/PPTX)
+// Update Report Theme
 // =============================
-app.get("/export-report", async (req, res) => {
+app.post("/update-theme", async (req, res) => {
   try {
     const token = await getAccessToken();
-    const format = req.query.format || "PDF"; // default PDF
 
-    const exportResp = await axios.post(
-      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
-      { format },
+    const themePayload = {
+      themeJson: {
+        name: req.body.name || "Custom Theme",
+        dataColors: req.body.dataColors || ["#8B1E2C", "#A0522D", "#CD853F"],
+        background: req.body.background || "#FFFFFF",
+        foreground: req.body.foreground || "#2E2E2E",
+        tableAccent: req.body.tableAccent || "#8B1E2C"
+      }
+    };
+
+    await axios.post(
+      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/UpdateTheme`,
+      themePayload,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    const exportId = exportResp.data.id;
-
-    // Poll until export completes
-    let fileBuffer;
-    while (true) {
-      const statusResp = await axios.get(
-        `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/exports/${exportId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (statusResp.data.status === "Succeeded") {
-        const fileResp = await axios.get(statusResp.data.resourceLocation, {
-          responseType: "arraybuffer",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        fileBuffer = fileResp.data;
-        break;
-      } else if (statusResp.data.status === "Failed") {
-        throw new Error("Export failed ❌");
-      }
-      await new Promise(r => setTimeout(r, 3000)); // wait 3 sec
-    }
-
-    res.setHeader("Content-Type", "application/octet-stream");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Report.${format.toLowerCase()}`
-    );
-    res.send(fileBuffer);
-
+    res.json({ message: "🎨 Theme updated directly in Power BI Service!" });
   } catch (err) {
-    console.error("❌ Error exporting:", err.response?.data || err.message);
-    res.status(500).json({ error: "Failed to export report" });
+    console.error("❌ Error updating theme:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to update theme" });
   }
 });
 
 // =============================
-// Voice Command Route (with AI)
+// Voice Command (with AI)
 // =============================
 app.post("/voice-command", async (req, res) => {
   const cmd = (req.body.command || "").toLowerCase();
   console.log("🎙️ Voice command:", cmd);
 
   try {
-    // Step 1: Call Azure OpenAI → structured JSON
     const aiResult = await callAzureOpenAI(cmd);
 
     if (aiResult.error) {
       return res.status(500).json({ status: "error", message: aiResult.error });
     }
 
-    // Step 2: Run AI structured command
+    // Step 2: Run structured AI action if available
     if (aiResult.action) {
       console.log("🤖 AI Parsed Command:", aiResult);
-      handleAICommand(aiResult); // 👈 structured handler
+      await handleAICommand(aiResult);
     } else {
-      console.log("⚠️ No AI action found, fallback to keyword");
+      console.log("⚠️ No AI action, fallback to keywords");
       runCommand(cmd);
     }
 
