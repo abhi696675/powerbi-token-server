@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Path to your PBIP report JSON (adjust if needed)
-const reportPath = path.join(__dirname, "../Coffee.Report/Report.json");
+const reportPath = path.join(__dirname, "Coffee.Report", "report.json");
 
 // Load report safely
 let report;
