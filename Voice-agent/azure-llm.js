@@ -13,11 +13,16 @@ async function callAzureOpenAI(prompt) {
       url,
       {
         messages: [
-          { role: "system", content: "You are a JSON command generator for a Power BI report editor." },
-          { role: "user", content: prompt }
+          {
+            role: "system",
+            content: "You are a JSON command generator for a Power BI report editor."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
         ],
-        temperature: 0.2,
-        max_completion_tokens: 300,   // ✅ FIXED: correct param
+        max_completion_tokens: 300,
         response_format: { type: "json_schema" }, // 👈 Force JSON output
       },
       {
@@ -39,4 +44,3 @@ async function callAzureOpenAI(prompt) {
 }
 
 module.exports = { callAzureOpenAI };
-
