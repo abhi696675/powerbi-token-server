@@ -17,7 +17,7 @@ async function callAzureOpenAI(prompt) {
           { role: "user", content: prompt }
         ],
         temperature: 0.2,
-        max_tokens: 300,
+        max_completion_tokens: 300,   // ✅ FIXED: correct param
         response_format: { type: "json_schema" }, // 👈 Force JSON output
       },
       {
@@ -28,7 +28,7 @@ async function callAzureOpenAI(prompt) {
       }
     );
 
-    // Extract AI result
+    // Extract AI result safely
     const aiMessage = response.data.choices?.[0]?.message?.content || "{}";
     return JSON.parse(aiMessage);
 
@@ -39,3 +39,4 @@ async function callAzureOpenAI(prompt) {
 }
 
 module.exports = { callAzureOpenAI };
+
