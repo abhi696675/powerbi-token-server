@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 
-// Path to your PBIP report JSON (adjust if needed)
-const reportPath = path.join(__dirname, "Coffee.Report", "report.json");
+// ✅ Fixed path (one level up from Voice-agent)
+const reportPath = path.join(__dirname, "..", "Coffee.Report", "report.json");
 
 // Load report safely
 let report;
