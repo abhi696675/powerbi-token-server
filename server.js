@@ -1,12 +1,16 @@
-require("dotenv").config();  // 🔹 Load .env file
+require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const { commitAndPush } = require("./Voice-agent/git-helper");
 const { runCommand } = require("./Voice-agent/patch");
+const { callAzureOpenAI } = require("./Voice-agent/azure-llm");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
 
 // =============================
 // Env Vars (Power BI + Azure OpenAI)
@@ -17,13 +21,6 @@ const clientSecret = process.env.CLIENT_SECRET;
 const workspaceId = process.env.WORKSPACE_ID;
 const reportId = process.env.REPORT_ID;
 const datasetId = process.env.DATASET_ID;
-
-const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
-const azureKey = process.env.AZURE_OPENAI_KEY;
-const azureDeployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-
-app.use(cors());
-app.use(express.json());
 
 // =============================
 // Root Check
@@ -139,16 +136,31 @@ app.get("/export-report", async (req, res) => {
 });
 
 // =============================
-// Voice Command Route
+// Voice Command Route (with AI)
 // =============================
-app.post("/voice-command", (req, res) => {
+app.post("/voice-command", async (req, res) => {
   const cmd = (req.body.command || "").toLowerCase();
   console.log("🎙️ Voice command:", cmd);
 
   try {
+    // Step 1: Call Azure OpenAI → structured JSON
+    const aiResult = await callAzureOpenAI(cmd);
+
+    if (aiResult.error) {
+      return res.status(500).json({ status: "error", message: aiResult.error });
+    }
+
+    // Step 2: Run command locally (patch.js)
     runCommand(cmd);
-    commitAndPush(`Voice command: ${cmd}`);
-    return res.json({ status: "ok", message: `⚡ Executed runCommand: ${cmd}` });
+
+    // Step 3: Commit to GitHub
+    commitAndPush(`Voice command executed: ${cmd}`);
+
+    return res.json({
+      status: "ok",
+      aiResult,
+      message: `⚡ Command executed and committed: ${cmd}`
+    });
   } catch (err) {
     console.error("❌ Error executing voice-command:", err);
     res.status(500).json({ status: "error", message: err.message });
@@ -156,27 +168,14 @@ app.post("/voice-command", (req, res) => {
 });
 
 // =============================
-// Azure OpenAI Chat Route
+// Azure OpenAI Chat (Free-form)
 // =============================
 app.post("/chat", async (req, res) => {
   try {
     const userPrompt = req.body.prompt || "Hello, test message!";
-    
-    const response = await axios.post(
-      `${azureEndpoint}openai/deployments/${azureDeployment}/chat/completions?api-version=2025-04-01-preview`,
-      {
-        messages: [{ role: "user", content: userPrompt }],
-        max_tokens: 200,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": azureKey,
-        },
-      }
-    );
+    const aiResult = await callAzureOpenAI(userPrompt);
 
-    res.json({ reply: response.data.choices[0].message.content });
+    res.json({ reply: aiResult });
   } catch (err) {
     console.error("❌ Azure OpenAI error:", err.response?.data || err.message);
     res.status(500).json({ error: "Failed to connect to Azure OpenAI" });

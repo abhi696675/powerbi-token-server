@@ -1,13 +1,14 @@
 const fs = require("fs");
 const path = require("path");
 
-// Path to PBIP report JSON
+// ✅ Correct path to PBIP report JSON
 const reportPath = path.join(__dirname, "../Coffee.Report/report.json");
 
 // Load report safely
 let report;
 try {
   report = JSON.parse(fs.readFileSync(reportPath, "utf-8"));
+  console.log("📄 Report loaded successfully!");
 } catch (err) {
   console.error("❌ Failed to load report file:", err.message);
   process.exit(1);
@@ -19,7 +20,7 @@ try {
 function applyTheme(colorHex) {
   report.theme = {
     name: `Custom Theme ${colorHex}`,
-    dataColors: [colorHex, "#A0522D", "#CD853F"],
+    dataColors: [colorHex, "#A0522D", "#CD853F"], // accent + brown tones
     background: "#FFF8F0",
     foreground: "#2E2E2E",
     tableAccent: colorHex
@@ -30,7 +31,10 @@ function applyTheme(colorHex) {
 // 2. Add Card
 function addCard(pageName, title, measureRef) {
   const page = report.sections.find(s => s.displayName === pageName);
-  if (!page) return console.error("❌ Page not found: " + pageName);
+  if (!page) {
+    console.error("❌ Page not found: " + pageName);
+    return;
+  }
 
   if (!page.visualContainers) page.visualContainers = [];
 
@@ -119,10 +123,10 @@ function handleCommand(command) {
       }
 
     } else {
-      console.error("❌ Command not recognized:", command);
+      console.warn("⚠️ Command not recognized:", command);
     }
 
-    // Save report back
+    // Save report back safely
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     console.log("💾 Report saved successfully!");
 
@@ -133,6 +137,8 @@ function handleCommand(command) {
 
 // ---------------- EXPORT FOR SERVER ----------------
 function runCommand(command) {
+  console.log("🎯 Running command:", command);
   handleCommand(command);
 }
+
 module.exports = { runCommand };
