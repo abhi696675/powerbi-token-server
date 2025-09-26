@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-// Path to your PBIP report JSON (adjust if needed)
+// Path to PBIP report JSON
 const reportPath = path.join(__dirname, "../Coffee.Report/Report.json");
 
 // Load report safely
@@ -93,36 +93,41 @@ function createComparisonPage(vendor1, vendor2, metricRef) {
 
 // ---------------- COMMAND HANDLER ----------------
 function handleCommand(command) {
-  const cmd = command.toLowerCase();
-
-  if (cmd.includes("theme")) {
-    const color = cmd.match(/#([0-9A-Fa-f]{6})/);
-    if (color) applyTheme(color[0]);
-    else console.error("❌ Please provide a hex color e.g. #8B1E2C");
-
-  } else if (cmd.includes("caffeine safe limit")) {
-    addCard("Overview", "Caffeine Safe Limit", "Measures.[Safe Caffeine Limit (mg/day)]");
-
-  } else if (cmd.includes("sugar safe limit")) {
-    addCard("Overview", "Sugar Safe Limit", "Measures.[Safe Sugar Limit (g/day)]");
-
-  } else if (cmd.includes("comparison")) {
-    const vendors = cmd.match(/costa|starbucks|pret|greggs|nero/gi);
-    if (vendors && vendors.length >= 2) {
-      createComparisonPage(vendors[0], vendors[1], "Caffeine (mg)");
-    } else {
-      console.error("❌ Please specify two vendors (e.g. Costa vs Starbucks)");
-    }
-
-  } else {
-    console.error("❌ Command not recognized:", command);
-  }
+  const cmd = command.toLowerCase().trim();
 
   try {
+    if (cmd.includes("theme")) {
+      const color = cmd.match(/#([0-9A-Fa-f]{6})/);
+      if (color) {
+        applyTheme(color[0]);
+      } else {
+        console.error("❌ Please provide a hex color e.g. #8B1E2C");
+      }
+
+    } else if (cmd.includes("caffeine safe limit")) {
+      addCard("Overview", "Caffeine Safe Limit", "Measures.[Safe Caffeine Limit (mg/day)]");
+
+    } else if (cmd.includes("sugar safe limit")) {
+      addCard("Overview", "Sugar Safe Limit", "Measures.[Safe Sugar Limit (g/day)]");
+
+    } else if (cmd.includes("comparison")) {
+      const vendors = cmd.match(/costa|starbucks|pret|greggs|nero/gi);
+      if (vendors && vendors.length >= 2) {
+        createComparisonPage(vendors[0], vendors[1], "Caffeine (mg)");
+      } else {
+        console.error("❌ Please specify two vendors (e.g. Costa vs Starbucks)");
+      }
+
+    } else {
+      console.error("❌ Command not recognized:", command);
+    }
+
+    // Save report back
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     console.log("💾 Report saved successfully!");
+
   } catch (err) {
-    console.error("❌ Failed to save report:", err.message);
+    console.error("❌ Error in handleCommand:", err.message);
   }
 }
 
