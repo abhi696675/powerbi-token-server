@@ -131,16 +131,6 @@ function handleCommand(command) {
   }
 }
 
-// ---------------- CLI MODE ----------------
-if (require.main === module) {
-  const command = process.argv.slice(2).join(" ");
-  if (!command) {
-    console.error("⚠️ No command provided");
-    process.exit(1);
-  }
-  handleCommand(command);
-}
-
 // ---------------- EXPORT FOR SERVER ----------------
 function runCommand(command) {
   handleCommand(command);
