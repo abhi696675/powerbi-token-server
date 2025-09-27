@@ -107,42 +107,27 @@ async function handleAICommand(aiResult) {
       }
 
 case "compare": {
-  console.log("🔍 Running comparison DAX");
-
-  const vendor1 = aiResult.vendor1;
-  const vendor2 = aiResult.vendor2;
+  const v1 = aiResult.vendor1 || "Costa";
+  const v2 = aiResult.vendor2 || "Starbucks";
   const metric = aiResult.metric || "Caffeine (mg)";
 
-  if (!vendor1 || !vendor2) {
-    console.warn("⚠️ Missing vendor names in AI result");
-    return { error: true, message: "Vendor names not provided" };
-  }
+  console.log("📊 Running comparison DAX for vendors:", v1, "vs", v2);
 
-  // Dynamic DAX with vendor filters
-  const daxQuery = `
+  const dax = `
     EVALUATE
+    SUMMARIZECOLUMNS(
+      'Coffee Detail'[Vendor],
+      "${metric}", SUM('Coffee Detail'[${metric}])
+    )
     FILTER(
-      SUMMARIZECOLUMNS(
-        'Coffee Detail'[Vendor],
-        "${metric}",
-        SUM('Coffee Detail'[${metric}])
-      ),
-      'Coffee Detail'[Vendor] IN { "${vendor1}", "${vendor2}" }
+      'Coffee Detail',
+      'Coffee Detail'[Vendor] IN {"${v1}", "${v2}"}
     )
   `;
 
-  console.log("📊 DAX Query (compare):", daxQuery);
-
   try {
-    const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
-
-    return {
-      action: "compare",
-      vendor1,
-      vendor2,
-      metric,
-      result: resp.data
-    };
+    const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+    return { action: "compare", vendor1: v1, vendor2: v2, metric, result: resp.data };
   } catch (err) {
     console.error("❌ Compare query failed:", err.message);
     return { error: true, message: err.message };
