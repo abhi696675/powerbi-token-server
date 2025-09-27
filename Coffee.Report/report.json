@@ -159,5 +159,12 @@
     "background": "#FFFFFF",
     "foreground": "#2E2E2E",
     "tableAccent": "#FFFFFF"
-  }
+  },
+  "cards": [
+    {
+      "type": "kpi",
+      "title": "Top Sugar",
+      "dax": "TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)"
+    }
+  ]
 }
