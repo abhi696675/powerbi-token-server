@@ -2,12 +2,11 @@ const axios = require("axios");
 const fs = require("fs");
 require("dotenv").config();
 
-const tenantId = process.env.TENANT_ID;
-const clientId = process.env.CLIENT_ID;
-const clientSecret = process.env.CLIENT_SECRET;
-const datasetId = process.env.DATASET_ID;
-const workspaceId = process.env.WORKSPACE_ID;
-
+const tenantId = process.env.AZURE_TENANT_ID;
+const clientId = process.env.AZURE_CLIENT_ID;
+const clientSecret = process.env.AZURE_CLIENT_SECRET;
+const datasetId = process.env.PBI_DATASET_ID;
+const workspaceId = process.env.PBI_WORKSPACE_ID;
 // ---------------- Get Azure Access Token ----------------
 async function getAccessToken() {
   const resp = await axios.post(

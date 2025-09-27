@@ -15,13 +15,12 @@ app.use(express.json());
 // =============================
 // Env Vars (Power BI + Azure OpenAI)
 // =============================
-const tenantId = process.env.TENANT_ID;
-const clientId = process.env.CLIENT_ID;
-const clientSecret = process.env.CLIENT_SECRET;
-const workspaceId = process.env.WORKSPACE_ID;
-const reportId = process.env.REPORT_ID;
-const datasetId = process.env.DATASET_ID;
-
+const tenantId = process.env.AZURE_TENANT_ID;
+const clientId = process.env.AZURE_CLIENT_ID;
+const clientSecret = process.env.AZURE_CLIENT_SECRET;
+const workspaceId = process.env.PBI_WORKSPACE_ID;
+const reportId = process.env.PBI_REPORT_ID;
+const datasetId = process.env.PBI_DATASET_ID;
 // =============================
 // Root Check
 // =============================
