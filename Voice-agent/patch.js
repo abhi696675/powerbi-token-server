@@ -33,7 +33,7 @@ const colorMap = {
   "dark mode": "#000000"
 };
 
-// ----------------- LOCAL FUNCTIONS -----------------
+// ----------------- LOCAL HELPERS -----------------
 function saveReport() {
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
   console.log("💾 Report saved locally");
@@ -85,52 +85,57 @@ async function handleAICommand(aiResult) {
       case "applyTheme": {
         const colorHex = resolveColor(aiResult.colorHex || aiResult.colorName);
         console.log(`🎨 Applying theme via API: ${colorHex}`);
-
-        await axios.post(`${baseUrl}/update-theme`, {
-          name: "AI Theme",
-          dataColors: [colorHex, "#A0522D", "#CD853F"],
-          background: colorHex,
-          foreground: "#2E2E2E",
-          tableAccent: colorHex
-        });
-
-        console.log("✅ Theme updated in Power BI Service");
-        break;
+        try {
+          await axios.post(`${baseUrl}/update-theme`, {
+            name: "AI Theme",
+            dataColors: [colorHex, "#A0522D", "#CD853F"],
+            background: colorHex,
+            foreground: "#2E2E2E",
+            tableAccent: colorHex
+          });
+          console.log("✅ Theme updated in Power BI Service");
+        } catch (err) {
+          console.error("❌ API theme update failed, applying locally:", err.message);
+          applyTheme(colorHex); // fallback local theme
+        }
+        return { action: "applyTheme", color: colorHex };
       }
 
       case "addCard": {
-        console.log(`📊 Adding new card: ${aiResult.metric}`);
         addCard(aiResult.metric, aiResult.dax || "SUM('Coffee Detail'[Caffeine (mg)])");
-        break;
+        return { action: "addCard", metric: aiResult.metric };
       }
 
-      case "compare": {
-        console.log(`🔁 Adding comparison: ${aiResult.metric} by ${aiResult.dimension}`);
-        addComparison(aiResult.metric, aiResult.dimension);
-        break;
+      case "compare":
+      case "createComparison":
+      case "compareVendors": {
+        addComparison(aiResult.metric || "Caffeine", aiResult.dimension || "Vendor");
+        return { action: "compare", metric: aiResult.metric, dimension: aiResult.dimension };
       }
 
       case "topCaffeine": {
         console.log("☕ Fetching Top Caffeine products");
-        await axios.post(`${baseUrl}/voice-query`, {
-          dax: "TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)"
+        const resp = await axios.post(`${baseUrl}/voice-query`, {
+          dax: "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)"
         });
-        break;
+        return { action: "daxQuery", type: "topCaffeine", result: resp.data };
       }
 
       case "topSugar": {
         console.log("🍬 Fetching Top Sugar products");
-        await axios.post(`${baseUrl}/voice-query`, {
-          dax: "TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)"
+        const resp = await axios.post(`${baseUrl}/voice-query`, {
+          dax: "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)"
         });
-        break;
+        return { action: "daxQuery", type: "topSugar", result: resp.data };
       }
 
       default:
         console.warn("⚠️ Unknown AI action:", aiResult.action);
+        return { action: "unknown", raw: aiResult };
     }
   } catch (err) {
     console.error("❌ Error in handleAICommand:", err.message);
+    return { error: true, message: err.message };
   }
 }
 

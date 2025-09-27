@@ -110,7 +110,6 @@ app.post("/update-theme", async (req, res) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    console.log("✅ Theme updated successfully in Power BI Service");
     res.json({ message: "🎨 Theme updated directly in Power BI Service!" });
   } catch (err) {
     console.error("❌ Error updating theme:", err.response?.data || err.message);
@@ -129,7 +128,6 @@ app.post("/voice-query", async (req, res) => {
       "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)";
 
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
-
     const queryPayload = { queries: [{ query: daxQuery }] };
 
     console.log("📊 Executing DAX Query:", daxQuery);
@@ -138,7 +136,7 @@ app.post("/voice-query", async (req, res) => {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    res.json({ result: resp.data });
+    res.json({ dax: daxQuery, result: resp.data });
   } catch (err) {
     console.error("❌ Error executing DAX query:", err.response?.data || err.message);
     res.status(500).json({ error: "Failed to run DAX query" });
@@ -150,32 +148,34 @@ app.post("/voice-query", async (req, res) => {
 // =============================
 app.post("/voice-command", async (req, res) => {
   const cmd = (req.body.command || "").toLowerCase();
-  console.log("📥 Voice-command API hit:", cmd);
+  console.log("📥 Voice-command received:", cmd);
 
   try {
     const aiResult = await callAzureOpenAI(cmd);
-    console.log("🤖 AI raw response:", aiResult);
+    console.log("🤖 AI parsed response:", aiResult);
 
     if (aiResult.error) {
       return res.status(500).json({ status: "error", message: aiResult.error });
     }
 
-    // Step 2: Run structured AI action if available
+    let actionResult = null;
+
     if (aiResult.action) {
-      console.log("✅ AI Parsed Command:", aiResult);
-      await handleAICommand(aiResult);
+      console.log("✅ Running AI action:", aiResult.action);
+      actionResult = await handleAICommand(aiResult);
     } else {
       console.log("⚠️ No AI action, using fallback keyword logic");
       runCommand(cmd);
     }
 
-    // Step 3: Commit to GitHub
+    // Commit to GitHub (optional)
     commitAndPush(`Voice command executed: ${cmd}`);
 
     return res.json({
       status: "ok",
       aiResult,
-      message: `⚡ Command executed and committed: ${cmd}`
+      actionResult,
+      message: `⚡ Command executed successfully: ${cmd}`
     });
   } catch (err) {
     console.error("❌ Error executing voice-command:", err);
