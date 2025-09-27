@@ -9,7 +9,7 @@ try {
   report = JSON.parse(fs.readFileSync(reportPath, "utf-8"));
   console.log("📄 Report loaded successfully!");
 } catch (err) {
-  console.warn(⚠️ Local report not found, fallback only:", err.message);
+  console.warn("⚠️ Local report not found, fallback only:", err.message);
 }
 
 // ----------------- BASE URL (local vs Render) -----------------
