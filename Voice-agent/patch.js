@@ -117,11 +117,11 @@ case "compare": {
     EVALUATE
     SUMMARIZECOLUMNS(
       'Coffee Detail'[Vendor],
+      FILTER(
+        'Coffee Detail',
+        'Coffee Detail'[Vendor] IN {"${v1}", "${v2}"}
+      ),
       "${metric}", SUM('Coffee Detail'[${metric}])
-    )
-    FILTER(
-      'Coffee Detail',
-      'Coffee Detail'[Vendor] IN {"${v1}", "${v2}"}
     )
   `;
 
@@ -133,7 +133,6 @@ case "compare": {
     return { error: true, message: err.message };
   }
 }
-
 
       case "topCaffeine": {
         const daxQuery =
