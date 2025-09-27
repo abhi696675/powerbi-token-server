@@ -21,12 +21,15 @@ async function callAzureOpenAI(prompt) {
               Supported actions:
               1. { "action": "applyTheme", "colorHex": "#RRGGBB" }
               2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
-              3. { "action": "createComparison", "vendor1": "Costa", "vendor2": "Starbucks", "metric": "Caffeine (mg)" }
+              3. { "action": "compare", "vendor1": "Costa", "vendor2": "Starbucks", "metric": "Caffeine (mg)" }
+              4. { "action": "topSugar" }
+              5. { "action": "topCaffeine" }
             `
           },
           { role: "user", content: prompt }
         ],
-        max_completion_tokens: 300 // ✅ Correct param
+        max_completion_tokens: 300, // ✅ keep as-is
+        // temperature default hi rakha hai
       },
       {
         headers: {
