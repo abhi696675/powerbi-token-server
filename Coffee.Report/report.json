@@ -175,6 +175,14 @@
     {
       "metric": "Caffeine (mg)",
       "dimension": "Vendor"
+    },
+    {
+      "metric": "Caffeine (mg)",
+      "dimension": "Vendor"
+    },
+    {
+      "metric": "Caffeine (mg)",
+      "dimension": "Vendor"
     }
   ]
 }
