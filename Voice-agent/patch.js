@@ -106,24 +106,33 @@ async function handleAICommand(aiResult) {
         return { action: "addCard", metric: aiResult.metric };
       }
 
-      case "compare":
-      case "createComparison":
-      case "compareVendors": {
-        const daxQuery =
-          aiResult.dax ||
-          `EVALUATE SUMMARIZECOLUMNS(
-              'Coffee Detail'[Vendor],
-              "${aiResult.metric || "Caffeine (mg)"}",
-              SUM('Coffee Detail'[${aiResult.metric || "Caffeine (mg)"}])
-          )`;
+     case "compare": {
+  console.log("🔍 Running comparison DAX");
 
-        console.log("🔁 Running comparison DAX:", daxQuery);
+  const daxQuery = `
+    EVALUATE SUMMARIZECOLUMNS(
+      'Coffee Detail'[Vendor],
+      "${aiResult.metric || "Caffeine (mg)"}",
+      SUM('Coffee Detail'[${aiResult.metric || "Caffeine (mg)"}])
+    )
+  `;
 
-        const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
-        addComparison(aiResult.metric || "Caffeine", "Vendor");
+  try {
+    const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
 
-        return { action: "compare", metric: aiResult.metric, result: resp.data };
-      }
+    return {
+      action: "compare",
+      vendor1: aiResult.vendor1,
+      vendor2: aiResult.vendor2,
+      metric: aiResult.metric,
+      result: resp.data // full Power BI API response
+    };
+  } catch (err) {
+    console.error("❌ Compare query failed:", err.message);
+    return { error: true, message: err.message };
+  }
+}
+
 
       case "topCaffeine": {
         const daxQuery =
