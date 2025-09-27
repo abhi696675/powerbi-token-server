@@ -164,13 +164,14 @@ app.post("/voice-command", async (req, res) => {
       console.log("✅ Running AI action:", aiResult.action);
       actionResult = await handleAICommand(aiResult);
     } else {
-      console.log("⚠️ No AI action, using fallback keyword logic");
+      console.log(⚠️ No AI action, using fallback keyword logic");
       runCommand(cmd);
     }
 
     // Commit to GitHub (optional)
     commitAndPush(`Voice command executed: ${cmd}`);
 
+    // ✅ Always return both aiResult + actionResult
     return res.json({
       status: "ok",
       aiResult,
