@@ -166,5 +166,15 @@
       "title": "Top Sugar",
       "dax": "TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)"
     }
+  ],
+  "comparisons": [
+    {
+      "metric": "Caffeine (mg)",
+      "dimension": "Vendor"
+    },
+    {
+      "metric": "Caffeine (mg)",
+      "dimension": "Vendor"
+    }
   ]
 }
