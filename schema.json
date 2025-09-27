@@ -1,0 +1,22 @@
+{
+  "@odata.context": "https://wabi-india-central-a-primary-redirect.analysis.windows.net/v1.0/myorg/groups/6f607d82-6e31-414e-a18b-fc560bcaea1b/$metadata#datasets/$entity",
+  "id": "8ff45ace-31db-490e-9ef5-fd7ac2672e7e",
+  "name": "Coffee Health Assistant",
+  "webUrl": "https://app.powerbi.com/groups/6f607d82-6e31-414e-a18b-fc560bcaea1b/datasets/8ff45ace-31db-490e-9ef5-fd7ac2672e7e",
+  "addRowsAPIEnabled": false,
+  "configuredBy": "rohit91@oxygenbi.com",
+  "isRefreshable": true,
+  "isEffectiveIdentityRequired": false,
+  "isEffectiveIdentityRolesRequired": false,
+  "isOnPremGatewayRequired": false,
+  "targetStorageMode": "PremiumFiles",
+  "createdDate": "2025-09-20T04:58:20.103Z",
+  "createReportEmbedURL": "https://app.powerbi.com/reportEmbed?config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLUlORElBLUNFTlRSQUwtQS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+  "qnaEmbedURL": "https://app.powerbi.com/qnaEmbed?config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLUlORElBLUNFTlRSQUwtQS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+  "upstreamDatasets": [],
+  "users": [],
+  "queryScaleOutSettings": {
+    "autoSyncReadOnlyReplicas": true,
+    "maxReadOnlyReplicas": 0
+  }
+}

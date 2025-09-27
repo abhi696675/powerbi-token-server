@@ -1,3 +1,4 @@
+const { ConfidentialClientApplication } = require("@azure/msal-node");
 const axios = require("axios");
 const fs = require("fs");
 require("dotenv").config();
@@ -5,35 +6,39 @@ require("dotenv").config();
 const tenantId = process.env.AZURE_TENANT_ID;
 const clientId = process.env.AZURE_CLIENT_ID;
 const clientSecret = process.env.AZURE_CLIENT_SECRET;
-const datasetId = process.env.PBI_DATASET_ID;
 const workspaceId = process.env.PBI_WORKSPACE_ID;
-// ---------------- Get Azure Access Token ----------------
-async function getAccessToken() {
-  const resp = await axios.post(
-    `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
-    new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: clientId,
-      client_secret: clientSecret,
-      scope: "https://analysis.windows.net/powerbi/api/.default"
-    })
-  );
-  return resp.data.access_token;
+const datasetId = process.env.PBI_DATASET_ID;
+
+const config = {
+  auth: {
+    clientId,
+    authority: `https://login.microsoftonline.com/${tenantId}`,
+    clientSecret,
+  }
+};
+
+const cca = new ConfidentialClientApplication(config);
+
+async function getToken() {
+  const result = await cca.acquireTokenByClientCredential({
+    scopes: ["https://analysis.windows.net/powerbi/api/.default"],
+  });
+  return result.accessToken;
 }
 
-// ---------------- Extract Schema ----------------
 async function extractSchema() {
   try {
-    const token = await getAccessToken();
-    const url = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/tables`;
+    const token = await getToken();
+
+    // Normal dataset metadata
+    const url = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}`;
 
     const resp = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    const schema = { tables: resp.data.value };
-    fs.writeFileSync("Coffee.Report/schema.json", JSON.stringify(schema, null, 2));
-    console.log("✅ Schema extracted successfully! File: Coffee.Report/schema.json");
+    fs.writeFileSync("schema.json", JSON.stringify(resp.data, null, 2));
+    console.log("✅ Schema saved to schema.json");
   } catch (err) {
     console.error("❌ Error extracting schema:", err.response?.data || err.message);
   }

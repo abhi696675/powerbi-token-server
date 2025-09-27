@@ -5,6 +5,7 @@ const cors = require("cors");
 const { commitAndPush } = require("./Voice-agent/git-helper");
 const { runCommand, handleAICommand } = require("./Voice-agent/patch");
 const { callAzureOpenAI } = require("./Voice-agent/azure-llm");
+const { processCommand } = require("./Voice-agent/command-processor"); // ✅ नया import
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,7 @@ const clientSecret = process.env.AZURE_CLIENT_SECRET;
 const workspaceId = process.env.PBI_WORKSPACE_ID;
 const reportId = process.env.PBI_REPORT_ID;
 const datasetId = process.env.PBI_DATASET_ID;
+
 // =============================
 // Root Check
 // =============================
@@ -143,35 +145,34 @@ app.post("/voice-query", async (req, res) => {
 });
 
 // =============================
-// Voice Command (with AI)
+// Voice Command (AI + Processor)
 // =============================
 app.post("/voice-command", async (req, res) => {
   const cmd = (req.body.command || "").toLowerCase();
   console.log("📥 Voice-command received:", cmd);
 
   try {
+    // 1. Try AI parse
     const aiResult = await callAzureOpenAI(cmd);
     console.log("🤖 AI parsed response:", aiResult);
-
-    if (aiResult.error) {
-      return res.status(500).json({ status: "error", message: aiResult.error });
-    }
 
     let actionResult = null;
 
     if (aiResult.action) {
+      // AI structured action
       console.log("✅ Running AI action:", aiResult.action);
       actionResult = await handleAICommand(aiResult);
     } else {
-      // ✅ FIXED this line
-      console.log("⚠️ No AI action, using fallback keyword logic");
-      runCommand(cmd);
+      // Fallback → custom processor
+      console.log("⚠️ No AI action, falling back to command-processor");
+      actionResult = await processCommand(cmd, {
+        vendors: ["Costa", "Starbucks", "Pret", "Greggs", "Caffè Nero"],
+      });
     }
 
-    // Commit to GitHub (optional)
+    // Git commit
     commitAndPush(`Voice command executed: ${cmd}`);
 
-    // ✅ Always return both aiResult + actionResult
     return res.json({
       status: "ok",
       aiResult,
