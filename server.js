@@ -164,7 +164,8 @@ app.post("/voice-command", async (req, res) => {
       console.log("✅ Running AI action:", aiResult.action);
       actionResult = await handleAICommand(aiResult);
     } else {
-      console.log(⚠️ No AI action, using fallback keyword logic");
+      // ✅ FIXED this line
+      console.log("⚠️ No AI action, using fallback keyword logic");
       runCommand(cmd);
     }
 
