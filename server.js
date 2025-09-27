@@ -116,6 +116,33 @@ app.post("/update-theme", async (req, res) => {
 });
 
 // =============================
+// Run DAX Query on Dataset (voice-query)
+// =============================
+app.post("/voice-query", async (req, res) => {
+  try {
+    const token = await getAccessToken();
+    const daxQuery =
+      req.body.dax ||
+      "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)";
+
+    const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
+
+    const queryPayload = {
+      queries: [{ query: daxQuery }]
+    };
+
+    const resp = await axios.post(queryUrl, queryPayload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    res.json({ result: resp.data });
+  } catch (err) {
+    console.error("❌ Error executing DAX query:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to run DAX query" });
+  }
+});
+
+// =============================
 // Voice Command (with AI)
 // =============================
 app.post("/voice-command", async (req, res) => {
@@ -171,5 +198,6 @@ app.post("/chat", async (req, res) => {
 // Start Server
 // =============================
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  console.log(`🚀 Server running on ${baseUrl}`);
 });
