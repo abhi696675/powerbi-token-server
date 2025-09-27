@@ -106,26 +106,42 @@ async function handleAICommand(aiResult) {
         return { action: "addCard", metric: aiResult.metric };
       }
 
-     case "compare": {
+case "compare": {
   console.log("🔍 Running comparison DAX");
 
+  const vendor1 = aiResult.vendor1;
+  const vendor2 = aiResult.vendor2;
+  const metric = aiResult.metric || "Caffeine (mg)";
+
+  if (!vendor1 || !vendor2) {
+    console.warn("⚠️ Missing vendor names in AI result");
+    return { error: true, message: "Vendor names not provided" };
+  }
+
+  // Dynamic DAX with vendor filters
   const daxQuery = `
-    EVALUATE SUMMARIZECOLUMNS(
-      'Coffee Detail'[Vendor],
-      "${aiResult.metric || "Caffeine (mg)"}",
-      SUM('Coffee Detail'[${aiResult.metric || "Caffeine (mg)"}])
+    EVALUATE
+    FILTER(
+      SUMMARIZECOLUMNS(
+        'Coffee Detail'[Vendor],
+        "${metric}",
+        SUM('Coffee Detail'[${metric}])
+      ),
+      'Coffee Detail'[Vendor] IN { "${vendor1}", "${vendor2}" }
     )
   `;
+
+  console.log("📊 DAX Query (compare):", daxQuery);
 
   try {
     const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
 
     return {
       action: "compare",
-      vendor1: aiResult.vendor1,
-      vendor2: aiResult.vendor2,
-      metric: aiResult.metric,
-      result: resp.data // full Power BI API response
+      vendor1,
+      vendor2,
+      metric,
+      result: resp.data
     };
   } catch (err) {
     console.error("❌ Compare query failed:", err.message);
