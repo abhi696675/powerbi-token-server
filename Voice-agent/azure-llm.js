@@ -17,29 +17,19 @@ async function callAzureOpenAI(prompt) {
             role: "system",
             content: `
               You are a JSON command generator for a Power BI report editor.
-              Always respond ONLY with a valid JSON object (no text outside JSON).
-
+              Always respond ONLY with a valid JSON object.
+              Never include explanations, markdown, or text outside JSON.
               Supported actions:
               1. { "action": "applyTheme", "colorHex": "#RRGGBB" }
-
-              2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", 
-                   "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
-
-              3. { "action": "compare", "vendor1": "Costa", "vendor2": "Starbucks", 
-                   "metric": "Caffeine (mg)", 
-                   "dax": "EVALUATE SUMMARIZECOLUMNS('Coffee Detail'[Vendor], \\"Caffeine\\", SUM('Coffee Detail'[Caffeine (mg)]))" }
-
-              4. { "action": "topSugar", 
-                   "dax": "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)" }
-
-              5. { "action": "topCaffeine", 
-                   "dax": "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)" }
+              2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
+              3. { "action": "compare", "vendor1": "Costa", "vendor2": "Starbucks", "metric": "Caffeine (mg)" }
+              4. { "action": "topSugar" }
+              5. { "action": "topCaffeine" }
             `
           },
           { role: "user", content: prompt }
         ],
-        max_completion_tokens: 300, // ✅ keep this
-        temperature: 1 // deterministic JSON
+        max_completion_tokens: 300
       },
       {
         headers: {
@@ -49,11 +39,15 @@ async function callAzureOpenAI(prompt) {
       }
     );
 
-    // ✅ Extract AI result safely
-    let aiMessage = response.data.choices?.[0]?.message?.content || "{}";
+    let aiMessage = response.data.choices?.[0]?.message?.content?.trim() || "{}";
 
     try {
-      return JSON.parse(aiMessage);
+      const parsed = JSON.parse(aiMessage);
+      if (!parsed.action) {
+        console.warn("⚠️ AI returned JSON but missing action:", parsed);
+        return { error: "No action found", raw: parsed };
+      }
+      return parsed;
     } catch (jsonErr) {
       console.error("⚠️ Failed to parse AI JSON:", aiMessage);
       return { error: "Invalid JSON from AI", raw: aiMessage };
