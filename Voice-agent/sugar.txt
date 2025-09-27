@@ -1,0 +1,115 @@
+{
+  "dax": "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)",
+  "result": {
+    "results": [
+      {
+        "tables": [
+          {
+            "rows": [
+              {
+                "Coffee Detail[Vendor]": "Starbucks",
+                "Coffee Detail[Season 2025]": "Autumn",
+                "Coffee Detail[Category]": "Seasonal",
+                "Coffee Detail[Product]": "Pumpkin Spice Frappuccino",
+                "Coffee Detail[Size]": "Venti",
+                "Coffee Detail[Energy (kJ)]": 1731,
+                "Coffee Detail[Energy (kcal)]": 412,
+                "Coffee Detail[Fat (g)]": 14.4,
+                "Coffee Detail[Saturated (g)]": 10,
+                "Coffee Detail[Carbohydrates (g)]": 62.5,
+                "Coffee Detail[Sugars (g)]": 61,
+                "Coffee Detail[Fibre (g)]": 4.1,
+                "Coffee Detail[Protein (g)]": 5.5,
+                "Coffee Detail[Salt (g)]": "0.8",
+                "Coffee Detail[Caffeine (mg)]": 44,
+                "Coffee Detail[Allergens]": "Semi Skimmed milk",
+                "Coffee Detail[Vendor–Size]": "Starbucks - Venti",
+                "Coffee Detail[Risk Category]": "🍭 Sugar Risk"
+              },
+              {
+                "Coffee Detail[Vendor]": "Caffe Nero",
+                "Coffee Detail[Season 2025]": "Autumn",
+                "Coffee Detail[Category]": "Iced Frappe",
+                "Coffee Detail[Product]": "Millionaires Luxury Frappe",
+                "Coffee Detail[Size]": "Standard",
+                "Coffee Detail[Energy (kJ)]": 2027,
+                "Coffee Detail[Energy (kcal)]": 482,
+                "Coffee Detail[Fat (g)]": 18.7,
+                "Coffee Detail[Saturated (g)]": 5.3,
+                "Coffee Detail[Carbohydrates (g)]": 71.4,
+                "Coffee Detail[Sugars (g)]": 61.1,
+                "Coffee Detail[Fibre (g)]": 2,
+                "Coffee Detail[Protein (g)]": 6.7,
+                "Coffee Detail[Salt (g)]": "0.54",
+                "Coffee Detail[Caffeine (mg)]": 0,
+                "Coffee Detail[Allergens]": "Whole milk",
+                "Coffee Detail[Vendor–Size]": "Caffe Nero - Standard",
+                "Coffee Detail[Risk Category]": "🍭 Sugar Risk"
+              },
+              {
+                "Coffee Detail[Vendor]": "Caffe Nero",
+                "Coffee Detail[Season 2025]": "Autumn",
+                "Coffee Detail[Category]": "Iced Frappe",
+                "Coffee Detail[Product]": "Millionaires Luxury Frappe",
+                "Coffee Detail[Size]": "Standard",
+                "Coffee Detail[Energy (kJ)]": 1924,
+                "Coffee Detail[Energy (kcal)]": 457,
+                "Coffee Detail[Fat (g)]": 15.9,
+                "Coffee Detail[Saturated (g)]": 4.5,
+                "Coffee Detail[Carbohydrates (g)]": 70.7,
+                "Coffee Detail[Sugars (g)]": 61,
+                "Coffee Detail[Fibre (g)]": 2,
+                "Coffee Detail[Protein (g)]": 7,
+                "Coffee Detail[Salt (g)]": "0.55000000000000004",
+                "Coffee Detail[Caffeine (mg)]": 0,
+                "Coffee Detail[Allergens]": "Soya drink",
+                "Coffee Detail[Vendor–Size]": "Caffe Nero - Standard",
+                "Coffee Detail[Risk Category]": "🍭 Sugar Risk"
+              },
+              {
+                "Coffee Detail[Vendor]": "Caffe Nero",
+                "Coffee Detail[Season 2025]": "Autumn",
+                "Coffee Detail[Category]": "Iced Frappe",
+                "Coffee Detail[Product]": "Millionaires Luxury Frappe",
+                "Coffee Detail[Size]": "Standard",
+                "Coffee Detail[Energy (kJ)]": 2000,
+                "Coffee Detail[Energy (kcal)]": 468,
+                "Coffee Detail[Fat (g)]": 18.9,
+                "Coffee Detail[Saturated (g)]": 5.6,
+                "Coffee Detail[Carbohydrates (g)]": 73.2,
+                "Coffee Detail[Sugars (g)]": 63,
+                "Coffee Detail[Fibre (g)]": 2,
+                "Coffee Detail[Protein (g)]": 3.8,
+                "Coffee Detail[Salt (g)]": "0.57999999999999996",
+                "Coffee Detail[Caffeine (mg)]": 0,
+                "Coffee Detail[Allergens]": "Oat drink",
+                "Coffee Detail[Vendor–Size]": "Caffe Nero - Standard",
+                "Coffee Detail[Risk Category]": "🍭 Sugar Risk"
+              },
+              {
+                "Coffee Detail[Vendor]": "Caffe Nero",
+                "Coffee Detail[Season 2025]": "Autumn",
+                "Coffee Detail[Category]": "Iced Frappe",
+                "Coffee Detail[Product]": "Millionaires Luxury Frappe",
+                "Coffee Detail[Size]": "Standard",
+                "Coffee Detail[Energy (kJ)]": 1840,
+                "Coffee Detail[Energy (kcal)]": 438,
+                "Coffee Detail[Fat (g)]": 13.5,
+                "Coffee Detail[Saturated (g)]": 3.8,
+                "Coffee Detail[Carbohydrates (g)]": 71.7,
+                "Coffee Detail[Sugars (g)]": 61.4,
+                "Coffee Detail[Fibre (g)]": 2,
+                "Coffee Detail[Protein (g)]": 7,
+                "Coffee Detail[Salt (g)]": "0.55000000000000004",
+                "Coffee Detail[Caffeine (mg)]": 0,
+                "Coffee Detail[Allergens]": "Skimmed milk",
+                "Coffee Detail[Vendor–Size]": "Caffe Nero - Standard",
+                "Coffee Detail[Risk Category]": "🍭 Sugar Risk"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -35,12 +35,19 @@ async function callAzureOpenAI(prompt) {
               Dataset schema (for reference):
               ${JSON.stringify(schema, null, 2)}
 
-              Supported actions:
+              Supported actions (examples):
               1. { "action": "applyTheme", "colorHex": "#RRGGBB" }
               2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
               3. { "action": "compare", "vendor1": "Costa", "vendor2": "Starbucks", "metric": "Caffeine (mg)" }
-              4. { "action": "topSugar" }
-              5. { "action": "topCaffeine" }
+              4. { "action": "topN", "n": 5, "column": "Sugars (g)" }
+              5. { "action": "topCaffeine", "n": 5 }
+              6. { "action": "topSugar", "n": 5 }
+              7. { "action": "textSize", "change": "increase" }
+              8. { "action": "safeDrink", "age": 25 }
+              9. { "action": "filter", "value": "Latte" }
+              10. { "action": "maxValue", "column": "Caffeine (mg)" }
+              11. { "action": "minValue", "column": "Sugars (g)" }
+              12. { "action": "compareCaloriesSugar" }
             `
           },
           { role: "user", content: prompt }

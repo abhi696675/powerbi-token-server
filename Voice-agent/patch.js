@@ -12,34 +12,21 @@ try {
   console.warn("⚠️ Local report not found, fallback only:", err.message);
 }
 
-// ----------------- BASE URL (local vs Render) -----------------
+// ----------------- BASE URL -----------------
 const baseUrl = process.env.RENDER_EXTERNAL_URL || "http://localhost:3000";
 console.log("🌍 Base URL in use:", baseUrl);
 
-// ----------------- COLOR DICTIONARY -----------------
-const colorMap = {
-  white: "#FFFFFF",
-  black: "#000000",
-  red: "#FF0000",
-  green: "#00FF00",
-  blue: "#0000FF",
-  brown: "#8B4513",
-  "coffee brown": "#8B1E2C",
-  "dark brown": "#654321",
-  yellow: "#FFFF00",
-  orange: "#FFA500",
-  gray: "#808080",
-  "light mode": "#FFFFFF",
-  "dark mode": "#000000"
-};
-
-// ----------------- LOCAL HELPERS -----------------
+// ----------------- HELPERS -----------------
 function saveReport() {
-  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-  console.log("💾 Report saved locally");
+  try {
+    fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+    console.log("💾 Report saved locally");
+  } catch (err) {
+    console.error("❌ Failed to save report locally:", err.message);
+  }
 }
 
-function applyTheme(colorHex) {
+function applyThemeLocal(colorHex) {
   report.theme = {
     name: `Custom Theme ${colorHex}`,
     dataColors: [colorHex, "#A0522D", "#CD853F"],
@@ -51,40 +38,15 @@ function applyTheme(colorHex) {
   console.log(`✅ Local theme applied: ${colorHex}`);
 }
 
-function addCard(metricName, daxFormula) {
-  if (!report.cards) report.cards = [];
-  report.cards.push({
-    type: "kpi",
-    title: metricName,
-    dax: daxFormula
-  });
-  saveReport();
-  console.log(`📊 New card added: ${metricName}`);
-}
-
-function addComparison(metric, dimension) {
-  if (!report.comparisons) report.comparisons = [];
-  report.comparisons.push({
-    metric,
-    dimension
-  });
-  saveReport();
-  console.log(`🔁 Comparison added: ${metric} by ${dimension}`);
-}
-
-function resolveColor(input) {
-  if (!input) return "#FFFFFF"; // default white
-  const key = input.toLowerCase().trim();
-  return colorMap[key] || input; // fallback: assume hex
-}
-
-// ----------------- AI STRUCTURED HANDLER -----------------
+// ----------------- MAIN HANDLER -----------------
 async function handleAICommand(aiResult) {
   try {
     switch (aiResult.action) {
+
+      // ============ THEME ============
       case "applyTheme": {
-        const colorHex = resolveColor(aiResult.colorHex || aiResult.colorName);
-        console.log(`🎨 Applying theme via API: ${colorHex}`);
+        const colorHex = aiResult.colorHex || aiResult.colorName || "#8B1E2C"; // default coffee brown
+        console.log(`🎨 Applying theme: ${colorHex}`);
         try {
           await axios.post(`${baseUrl}/update-theme`, {
             name: "AI Theme",
@@ -95,67 +57,143 @@ async function handleAICommand(aiResult) {
           });
           console.log("✅ Theme updated in Power BI Service");
         } catch (err) {
-          console.error("❌ API theme update failed, applying locally:", err.message);
-          applyTheme(colorHex); // fallback local theme
+          console.error("❌ API theme update failed:", err.message);
+          applyThemeLocal(colorHex);
         }
         return { action: "applyTheme", color: colorHex };
       }
 
+      // ============ ADD KPI CARD ============
       case "addCard": {
-        addCard(aiResult.metric, aiResult.dax || "SUM('Coffee Detail'[Caffeine (mg)])");
+        if (!report.cards) report.cards = [];
+        report.cards.push({
+          type: "kpi",
+          title: aiResult.title || aiResult.metric || "New Card",
+          dax: aiResult.dax || "SUM('Coffee Detail'[Caffeine (mg)])"
+        });
+        saveReport();
+        console.log(`📊 New card added: ${aiResult.title || aiResult.metric}`);
         return { action: "addCard", metric: aiResult.metric };
       }
 
-case "compare": {
-  const v1 = aiResult.vendor1 || "Costa";
-  const v2 = aiResult.vendor2 || "Starbucks";
-  const metric = aiResult.metric || "Caffeine (mg)";
+      // ============ COMPARE ============
+      case "compare": {
+        const v1 = aiResult.vendor1;
+        const v2 = aiResult.vendor2;
+        const metric = aiResult.metric || "Caffeine (mg)";
 
-  console.log("📊 Running comparison DAX for vendors:", v1, "vs", v2);
+        console.log(`📊 Comparing vendors: ${v1} vs ${v2} by ${metric}`);
 
-  const dax = `
-    EVALUATE
-    SUMMARIZECOLUMNS(
-      'Coffee Detail'[Vendor],
-      FILTER(
-        'Coffee Detail',
-        'Coffee Detail'[Vendor] IN {"${v1}", "${v2}"}
-      ),
-      "${metric}", SUM('Coffee Detail'[${metric}])
-    )
-  `;
+        const dax = `
+          EVALUATE
+          SUMMARIZECOLUMNS(
+            'Coffee Detail'[Vendor],
+            FILTER(
+              'Coffee Detail',
+              'Coffee Detail'[Vendor] IN {"${v1}", "${v2}"}
+            ),
+            "${metric}", SUM('Coffee Detail'[${metric}])
+          )
+        `;
 
-  try {
-    const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
-    return { action: "compare", vendor1: v1, vendor2: v2, metric, result: resp.data };
-  } catch (err) {
-    console.error("❌ Compare query failed:", err.message);
-    return { error: true, message: err.message };
-  }
-}
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "compare", vendor1: v1, vendor2: v2, metric, result: resp.data };
+      }
+
+      // ============ TOPN ============
+      case "topN": {
+        const n = aiResult.n || 5;
+        const column = aiResult.column || "Caffeine (mg)";
+        const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[${column}], DESC)`;
+
+        console.log(`☕ Fetching Top ${n} by ${column}`);
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "topN", column, result: resp.data };
+      }
 
       case "topCaffeine": {
-        const daxQuery =
-          aiResult.dax ||
-          "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)";
-
-        console.log("☕ Fetching Top Caffeine products with DAX:", daxQuery);
-
-        const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
-        return { action: "daxQuery", type: "topCaffeine", result: resp.data };
+        const n = aiResult.n || 5;
+        const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)`;
+        console.log("☕ Fetching Top Caffeine");
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "topCaffeine", result: resp.data };
       }
 
       case "topSugar": {
-        const daxQuery =
-          aiResult.dax ||
-          "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)";
-
-        console.log("🍬 Fetching Top Sugar products with DAX:", daxQuery);
-
-        const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
-        return { action: "daxQuery", type: "topSugar", result: resp.data };
+        const n = aiResult.n || 5;
+        const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)`;
+        console.log("🍬 Fetching Top Sugar");
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "topSugar", result: resp.data };
       }
 
+      // ============ MIN / MAX ============
+      case "maxValue": {
+        const column = aiResult.column || "Caffeine (mg)";
+        const dax = `EVALUATE TOPN(1, 'Coffee Detail', 'Coffee Detail'[${column}], DESC)`;
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "maxValue", column, result: resp.data };
+      }
+
+      case "minValue": {
+        const column = aiResult.column || "Caffeine (mg)";
+        const dax = `EVALUATE TOPN(1, 'Coffee Detail', 'Coffee Detail'[${column}], ASC)`;
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "minValue", column, result: resp.data };
+      }
+
+      // ============ SAFE DRINK ============
+      case "safeDrink": {
+        const age = aiResult.age || 18;
+        const dax = `
+          EVALUATE
+          FILTER(
+            'Coffee Detail',
+            'Coffee Detail'[Caffeine (mg)] <= CALCULATE(
+              MAX('AgeSafeLimit'[Safe Caffeine]),
+              'AgeSafeLimit'[Age] = ${age}
+            )
+          )
+        `;
+        console.log(`🛡️ Safe drinks for age ${age}`);
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "safeDrink", age, result: resp.data };
+      }
+
+      // ============ FILTER ============
+      case "filter": {
+        const val = aiResult.value;
+        const dax = `
+          EVALUATE
+          FILTER('Coffee Detail', 'Coffee Detail'[Category] = "${val}")
+        `;
+        console.log(`🔎 Filtering drinks by: ${val}`);
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "filter", value: val, result: resp.data };
+      }
+
+      // ============ CALORIES vs SUGAR ============
+      case "compareCaloriesSugar": {
+        const dax = `
+          EVALUATE
+          SUMMARIZECOLUMNS(
+            'Coffee Detail'[Vendor],
+            "Calories", SUM('Coffee Detail'[Calories]),
+            "Sugar", SUM('Coffee Detail'[Sugars (g)])
+          )
+        `;
+        console.log("⚖️ Comparing Calories with Sugar across vendors");
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+        return { action: "compareCaloriesSugar", result: resp.data };
+      }
+
+      // ============ TEXT SIZE ============
+      case "textSize": {
+        console.log(`🔠 Text size change: ${aiResult.change}`);
+        return { action: "textSize", change: aiResult.change };
+      }
+
+      // ============ DEFAULT ============
       default:
         console.warn("⚠️ Unknown AI action:", aiResult.action);
         return { action: "unknown", raw: aiResult };
@@ -166,33 +204,4 @@ case "compare": {
   }
 }
 
-// ----------------- FALLBACK (Keyword Mode) -----------------
-function runCommand(command) {
-  console.log("⚡ Fallback command:", command);
-  const lower = command.toLowerCase();
-
-  if (lower.includes("theme")) {
-    let foundColor = null;
-    for (const key of Object.keys(colorMap)) {
-      if (lower.includes(key)) {
-        foundColor = colorMap[key];
-        break;
-      }
-    }
-    if (foundColor) {
-      applyTheme(foundColor);
-    } else {
-      console.warn("❌ No valid color found. Try: white, black, coffee brown...");
-    }
-  } else if (lower.includes("top caffeine")) {
-    addCard("Top Caffeine", "TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)");
-  } else if (lower.includes("top sugar")) {
-    addCard("Top Sugar", "TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)");
-  } else if (lower.includes("compare")) {
-    addComparison("Caffeine", "Vendor");
-  } else {
-    console.warn("⚠️ Command not recognized:", command);
-  }
-}
-
-module.exports = { runCommand, handleAICommand };
+module.exports = { handleAICommand };
