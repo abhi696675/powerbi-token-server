@@ -150,15 +150,15 @@
     "useDefaultAggregateDisplayName": true
   },
   "theme": {
-    "name": "Custom Theme #000000",
+    "name": "Custom Theme #121212",
     "dataColors": [
-      "#000000",
+      "#121212",
       "#A0522D",
       "#CD853F"
     ],
-    "background": "#000000",
+    "background": "#121212",
     "foreground": "#2E2E2E",
-    "tableAccent": "#000000"
+    "tableAccent": "#121212"
   },
   "cards": [
     {
