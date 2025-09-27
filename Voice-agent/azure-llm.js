@@ -1,5 +1,17 @@
 const axios = require("axios");
 require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
+
+// ✅ Schema load kare (agar available hai)
+let schema = {};
+try {
+  const schemaPath = path.join(__dirname, "../Coffee.Report/schema.json");
+  schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
+  console.log("📄 Schema loaded for AI context");
+} catch (err) {
+  console.warn("⚠️ Schema.json not found, running without schema context");
+}
 
 async function callAzureOpenAI(prompt) {
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
@@ -19,6 +31,10 @@ async function callAzureOpenAI(prompt) {
               You are a JSON command generator for a Power BI report editor.
               Always respond ONLY with a valid JSON object.
               Never include explanations, markdown, or text outside JSON.
+
+              Dataset schema (for reference):
+              ${JSON.stringify(schema, null, 2)}
+
               Supported actions:
               1. { "action": "applyTheme", "colorHex": "#RRGGBB" }
               2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
@@ -29,7 +45,8 @@ async function callAzureOpenAI(prompt) {
           },
           { role: "user", content: prompt }
         ],
-        max_completion_tokens: 300
+        max_completion_tokens: 300,
+        temperature: 0 // ✅ deterministic JSON output
       },
       {
         headers: {
