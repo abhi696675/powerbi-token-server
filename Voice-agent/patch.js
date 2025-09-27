@@ -9,7 +9,7 @@ try {
   report = JSON.parse(fs.readFileSync(reportPath, "utf-8"));
   console.log("📄 Report loaded successfully!");
 } catch (err) {
-  console.warn("⚠️ Local report not found, fallback only:", err.message);
+  console.warn(⚠️ Local report not found, fallback only:", err.message);
 }
 
 // ----------------- BASE URL (local vs Render) -----------------
@@ -109,23 +109,41 @@ async function handleAICommand(aiResult) {
       case "compare":
       case "createComparison":
       case "compareVendors": {
-        addComparison(aiResult.metric || "Caffeine", aiResult.dimension || "Vendor");
-        return { action: "compare", metric: aiResult.metric, dimension: aiResult.dimension };
+        const daxQuery =
+          aiResult.dax ||
+          `EVALUATE SUMMARIZECOLUMNS(
+              'Coffee Detail'[Vendor],
+              "${aiResult.metric || "Caffeine (mg)"}",
+              SUM('Coffee Detail'[${aiResult.metric || "Caffeine (mg)"}])
+          )`;
+
+        console.log("🔁 Running comparison DAX:", daxQuery);
+
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
+        addComparison(aiResult.metric || "Caffeine", "Vendor");
+
+        return { action: "compare", metric: aiResult.metric, result: resp.data };
       }
 
       case "topCaffeine": {
-        console.log("☕ Fetching Top Caffeine products");
-        const resp = await axios.post(`${baseUrl}/voice-query`, {
-          dax: "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)"
-        });
+        const daxQuery =
+          aiResult.dax ||
+          "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)";
+
+        console.log("☕ Fetching Top Caffeine products with DAX:", daxQuery);
+
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
         return { action: "daxQuery", type: "topCaffeine", result: resp.data };
       }
 
       case "topSugar": {
-        console.log("🍬 Fetching Top Sugar products");
-        const resp = await axios.post(`${baseUrl}/voice-query`, {
-          dax: "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)"
-        });
+        const daxQuery =
+          aiResult.dax ||
+          "EVALUATE TOPN(5, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)";
+
+        console.log("🍬 Fetching Top Sugar products with DAX:", daxQuery);
+
+        const resp = await axios.post(`${baseUrl}/voice-query`, { dax: daxQuery });
         return { action: "daxQuery", type: "topSugar", result: resp.data };
       }
 
