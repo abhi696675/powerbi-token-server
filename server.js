@@ -102,12 +102,15 @@ app.post("/update-theme", async (req, res) => {
       }
     };
 
+    console.log("🎨 Updating theme with payload:", themePayload);
+
     await axios.post(
       `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/UpdateTheme`,
       themePayload,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
+    console.log("✅ Theme updated successfully in Power BI Service");
     res.json({ message: "🎨 Theme updated directly in Power BI Service!" });
   } catch (err) {
     console.error("❌ Error updating theme:", err.response?.data || err.message);
@@ -127,9 +130,9 @@ app.post("/voice-query", async (req, res) => {
 
     const queryUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/executeQueries`;
 
-    const queryPayload = {
-      queries: [{ query: daxQuery }]
-    };
+    const queryPayload = { queries: [{ query: daxQuery }] };
+
+    console.log("📊 Executing DAX Query:", daxQuery);
 
     const resp = await axios.post(queryUrl, queryPayload, {
       headers: { Authorization: `Bearer ${token}` }
@@ -147,10 +150,11 @@ app.post("/voice-query", async (req, res) => {
 // =============================
 app.post("/voice-command", async (req, res) => {
   const cmd = (req.body.command || "").toLowerCase();
-  console.log("🎙️ Voice command:", cmd);
+  console.log("📥 Voice-command API hit:", cmd);
 
   try {
     const aiResult = await callAzureOpenAI(cmd);
+    console.log("🤖 AI raw response:", aiResult);
 
     if (aiResult.error) {
       return res.status(500).json({ status: "error", message: aiResult.error });
@@ -158,10 +162,10 @@ app.post("/voice-command", async (req, res) => {
 
     // Step 2: Run structured AI action if available
     if (aiResult.action) {
-      console.log("🤖 AI Parsed Command:", aiResult);
+      console.log("✅ AI Parsed Command:", aiResult);
       await handleAICommand(aiResult);
     } else {
-      console.log("⚠️ No AI action, fallback to keywords");
+      console.log("⚠️ No AI action, using fallback keyword logic");
       runCommand(cmd);
     }
 
