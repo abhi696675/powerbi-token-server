@@ -39,7 +39,7 @@ async function callAzureOpenAI(prompt) {
           { role: "user", content: prompt }
         ],
         max_completion_tokens: 300, // ✅ keep this
-        temperature: 0 // deterministic JSON
+        temperature: 1 // deterministic JSON
       },
       {
         headers: {
