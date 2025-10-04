@@ -112,20 +112,20 @@ async function handleAICommand(aiResult) {
       }
 
       case "topCaffeine": {
-        const n = aiResult.n || 5;
-        const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)`;
-        console.log("☕ Fetching Top Caffeine");
-        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
-        return { action: "topCaffeine", result: resp.data };
-      }
+  const n = aiResult.n || 5;
+  const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[Caffeine (mg)], DESC)`;
+  console.log("☕ Fetching Top Caffeine");
+  const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+  return { action: "topCaffeine", column: "Caffeine (mg)", result: resp.data }; // ✅ Added column
+}
 
-      case "topSugar": {
-        const n = aiResult.n || 5;
-        const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)`;
-        console.log("🍬 Fetching Top Sugar");
-        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
-        return { action: "topSugar", result: resp.data };
-      }
+case "topSugar": {
+  const n = aiResult.n || 5;
+  const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[Sugars (g)], DESC)`;
+  console.log("🍬 Fetching Top Sugar");
+  const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+  return { action: "topSugar", column: "Sugars (g)", result: resp.data }; // ✅ Added column
+}
 
       // ============ MIN / MAX ============
       case "maxValue": {
