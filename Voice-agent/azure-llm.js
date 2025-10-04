@@ -39,21 +39,26 @@ async function callAzureOpenAI(prompt) {
               1. { "action": "applyTheme", "colorHex": "#RRGGBB" }
               2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
               3. { "action": "compare", "vendor1": "Costa", "vendor2": "Starbucks", "metric": "Caffeine (mg)" }
-              4. { "action": "topN", "n": 5, "column": "Sugars (g)" }
-              5. { "action": "topCaffeine", "n": 5 }
-              6. { "action": "topSugar", "n": 5 }
+              4. { "action": "topN", "n": 10, "column": "Sugars (g)" }
+              5. { "action": "topCaffeine", "n": 20, "column": "Caffeine (mg)" }   // ✅ flexible n
+              6. { "action": "topSugar", "n": 15, "column": "Sugars (g)" }         // ✅ flexible n
               7. { "action": "textSize", "change": "increase" }
               8. { "action": "safeDrink", "age": 25 }
               9. { "action": "filter", "value": "Latte" }
               10. { "action": "maxValue", "column": "Caffeine (mg)" }
               11. { "action": "minValue", "column": "Sugars (g)" }
               12. { "action": "compareCaloriesSugar" }
+
+              Important rules:
+              - For "topSugar" always include "column": "Sugars (g)"
+              - For "topCaffeine" always include "column": "Caffeine (mg)"
+              - For "topN" action, respect user-provided number (n). If not provided, default to 5.
             `
           },
           { role: "user", content: prompt }
         ],
         max_completion_tokens: 300,
-        temperature: 1 // ✅ deterministic JSON output
+        temperature: 0 // ✅ deterministic JSON output
       },
       {
         headers: {
@@ -67,10 +72,28 @@ async function callAzureOpenAI(prompt) {
 
     try {
       const parsed = JSON.parse(aiMessage);
+
       if (!parsed.action) {
         console.warn("⚠️ AI returned JSON but missing action:", parsed);
         return { error: "No action found", raw: parsed };
       }
+
+      // ✅ Post-processing fallback
+      if (parsed.action === "topSugar") {
+        if (!parsed.column) parsed.column = "Sugars (g)";
+        if (!parsed.n) parsed.n = 5;
+      }
+
+      if (parsed.action === "topCaffeine") {
+        if (!parsed.column) parsed.column = "Caffeine (mg)";
+        if (!parsed.n) parsed.n = 5;
+      }
+
+      if (parsed.action === "topN") {
+        if (!parsed.column) parsed.column = "Sugars (g)";
+        if (!parsed.n) parsed.n = 5;
+      }
+
       return parsed;
     } catch (jsonErr) {
       console.error("⚠️ Failed to parse AI JSON:", aiMessage);
