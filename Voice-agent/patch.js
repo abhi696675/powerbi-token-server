@@ -102,14 +102,17 @@ async function handleAICommand(aiResult) {
 
       // ============ TOPN ============
       case "topN": {
-        const n = aiResult.n || 5;
-        const column = aiResult.column || "Caffeine (mg)";
-        const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[${column}], DESC)`;
+  const n = aiResult.n || 5;
+  const column = aiResult.column || "Caffeine (mg)";
 
-        console.log(`☕ Fetching Top ${n} by ${column}`);
-        const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
-        return { action: "topN", column, result: resp.data };
-      }
+  // 🔥 Special handling for sugar keywords
+  const col = column.toLowerCase().includes("sugar") ? "Sugars (g)" : column;
+
+  const dax = `EVALUATE TOPN(${n}, 'Coffee Detail', 'Coffee Detail'[${col}], DESC)`;
+  console.log(`☕ Fetching Top ${n} by ${col}`);
+  const resp = await axios.post(`${baseUrl}/voice-query`, { dax });
+  return { action: "topN", column: col, result: resp.data };
+}
 
       case "topCaffeine": {
   const n = aiResult.n || 5;
