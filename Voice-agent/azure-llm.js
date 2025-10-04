@@ -40,8 +40,8 @@ async function callAzureOpenAI(prompt) {
               2. { "action": "addCard", "page": "Overview", "title": "Caffeine Safe Limit", "measureRef": "Measures.[Safe Caffeine Limit (mg/day)]" }
               3. { "action": "compare", "vendor1": "Costa", "vendor2": "Starbucks", "metric": "Caffeine (mg)" }
               4. { "action": "topN", "n": 10, "column": "Sugars (g)" }
-              5. { "action": "topCaffeine", "n": 20, "column": "Caffeine (mg)" }   // ✅ flexible n
-              6. { "action": "topSugar", "n": 15, "column": "Sugars (g)" }         // ✅ flexible n
+              5. { "action": "topCaffeine", "n": 20, "column": "Caffeine (mg)" }
+              6. { "action": "topSugar", "n": 15, "column": "Sugars (g)" }
               7. { "action": "textSize", "change": "increase" }
               8. { "action": "safeDrink", "age": 25 }
               9. { "action": "filter", "value": "Latte" }
@@ -50,6 +50,8 @@ async function callAzureOpenAI(prompt) {
               12. { "action": "compareCaloriesSugar" }
 
               Important rules:
+              - Always map "caffeine drink(s)" requests to { "action": "topCaffeine" }
+              - Always map "sugar drink(s)" requests to { "action": "topSugar" }
               - For "topSugar" always include "column": "Sugars (g)"
               - For "topCaffeine" always include "column": "Caffeine (mg)"
               - For "topN" action, respect user-provided number (n). If not provided, default to 5.
@@ -90,10 +92,16 @@ async function callAzureOpenAI(prompt) {
       }
 
       if (parsed.action === "topN") {
-        if (!parsed.column) parsed.column = "Sugars (g)";
         if (!parsed.n) parsed.n = 5;
+        // Auto-convert topN -> topCaffeine/topSugar
+        if (parsed.column === "Caffeine (mg)") {
+          parsed.action = "topCaffeine";
+        } else if (parsed.column === "Sugars (g)") {
+          parsed.action = "topSugar";
+        }
       }
 
+      console.log("🎯 Final parsed action:", parsed);
       return parsed;
     } catch (jsonErr) {
       console.error("⚠️ Failed to parse AI JSON:", aiMessage);
